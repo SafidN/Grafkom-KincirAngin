@@ -7,6 +7,8 @@ import numpy as np
 # Variabel global
 angleBlade = 0.0
 goatWalkPhase = 0.0
+dayNightTarget = 0.0
+dayNightBlend = 0.0
 viewAngleX = 12.0
 viewAngleY = -18.0
 viewMode = 5
@@ -17,10 +19,19 @@ lastMouseX = 0
 lastMouseY = 0
 
 GOAT_CONFIGS = [
-    {"base_x": -5.8, "base_z": 3.2, "scale": 0.8, "radius_x": 0.8, "radius_z": 0.5, "phase": 0.0},
-    {"base_x": -1.8, "base_z": 4.8, "scale": 0.75, "radius_x": 0.6, "radius_z": 0.45, "phase": 1.8},
-    {"base_x": 2.8, "base_z": 2.7, "scale": 0.82, "radius_x": 0.7, "radius_z": 0.55, "phase": 3.1},
+    {"index": 0, "base_x": -5.8, "base_z": 3.2, "scale": 0.8, "radius_x": 0.8, "radius_z": 0.5, "phase": 0.0},
+    {"index": 1, "base_x": -1.8, "base_z": 4.8, "scale": 0.75, "radius_x": 0.6, "radius_z": 0.45, "phase": 1.8},
+    {"index": 2, "base_x": 2.8, "base_z": 2.7, "scale": 0.82, "radius_x": 0.7, "radius_z": 0.55, "phase": 3.1},
 ]
+
+SHEEP_BARN_SPOTS = [
+    {"door_x": 2.55, "door_z": 1.5, "inside_x": 3.1, "inside_z": 0.45},
+    {"door_x": 3.1, "door_z": 1.0, "inside_x": 3.45, "inside_z": 0.0},
+    {"door_x": 3.62, "door_z": 0.55, "inside_x": 3.85, "inside_z": -0.35},
+]
+
+DAY_SKY_COLOR = (0.48, 0.75, 1.0, 1.0)
+NIGHT_SKY_COLOR = (0.05, 0.08, 0.18, 1.0)
 
 
 def create_blade_vertices():
@@ -64,7 +75,7 @@ BLADE_VERTICES, BLADE_INDICES = create_blade_vertices()
 
 
 def init():
-    sky_color = [0.48, 0.75, 1.0, 1.0]
+    sky_color = DAY_SKY_COLOR
     glClearColor(sky_color[0], sky_color[1], sky_color[2], sky_color[3])
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_NORMALIZE)
@@ -74,7 +85,7 @@ def init():
     glEnable(GL_COLOR_MATERIAL)
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
 
-    light_pos = [12.0, 18.0, 8.0, 1.0]
+    light_pos = [10.0, 18.0, 6.0, 1.0]
     glLightfv(GL_LIGHT0, GL_POSITION, light_pos)
     glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.95, 0.95, 0.9, 1.0])
     glLightfv(GL_LIGHT0, GL_SPECULAR, [0.3, 0.3, 0.3, 1.0])
@@ -85,6 +96,103 @@ def init():
     glFogfv(GL_FOG_COLOR, sky_color)
     glFogf(GL_FOG_DENSITY, 0.016)
     glHint(GL_FOG_HINT, GL_NICEST)
+
+
+def clamp(value, low, high):
+    return max(low, min(high, value))
+
+
+def lerp(a, b, t):
+    return a + (b - a) * t
+
+
+def smoothstep(t):
+    t = clamp(t, 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def mix_color(color_a, color_b, t):
+    return tuple(lerp(a, b, t) for a, b in zip(color_a, color_b))
+
+
+def apply_environment_colors():
+    sky = mix_color(DAY_SKY_COLOR, NIGHT_SKY_COLOR, dayNightBlend)
+    fog_density = lerp(0.016, 0.03, dayNightBlend)
+    glClearColor(sky[0], sky[1], sky[2], sky[3])
+    glFogfv(GL_FOG_COLOR, sky)
+    glFogf(GL_FOG_DENSITY, fog_density)
+
+
+def apply_environment_lighting():
+    light_pos = [
+        lerp(10.0, -8.0, dayNightBlend),
+        lerp(18.0, 13.0, dayNightBlend),
+        lerp(6.0, -6.0, dayNightBlend),
+        1.0,
+    ]
+    diffuse = [
+        lerp(0.95, 0.25, dayNightBlend),
+        lerp(0.95, 0.3, dayNightBlend),
+        lerp(0.9, 0.45, dayNightBlend),
+        1.0,
+    ]
+    specular = [
+        lerp(0.3, 0.12, dayNightBlend),
+        lerp(0.3, 0.14, dayNightBlend),
+        lerp(0.3, 0.18, dayNightBlend),
+        1.0,
+    ]
+    ambient = [
+        lerp(0.4, 0.16, dayNightBlend),
+        lerp(0.4, 0.17, dayNightBlend),
+        lerp(0.4, 0.24, dayNightBlend),
+        1.0,
+    ]
+    glLightfv(GL_LIGHT0, GL_POSITION, light_pos)
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse)
+    glLightfv(GL_LIGHT0, GL_SPECULAR, specular)
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient)
+
+
+def draw_celestial_body():
+    glDisable(GL_LIGHTING)
+
+    if dayNightBlend < 0.55:
+        sun_t = 1.0 - smoothstep(dayNightBlend / 0.55)
+        glColor3f(1.0, 0.88, 0.28)
+        glPushMatrix()
+        glTranslatef(9.0, 13.2, -10.0)
+        glutSolidSphere(0.95 + sun_t * 0.08, 20, 20)
+        glPopMatrix()
+
+        glColor3f(1.0, 0.78, 0.2)
+        for angle in range(0, 360, 45):
+            glPushMatrix()
+            glTranslatef(9.0, 13.2, -10.0)
+            glRotatef(float(angle), 0.0, 0.0, 1.0)
+            glTranslatef(0.0, 1.35, 0.0)
+            glScalef(0.12, 0.5, 0.12)
+            glutSolidCube(1.0)
+            glPopMatrix()
+
+    if dayNightBlend > 0.2:
+        moon_t = smoothstep((dayNightBlend - 0.2) / 0.8)
+        glColor3f(0.92, 0.93, 1.0)
+        glPushMatrix()
+        glTranslatef(-9.5, 12.2, -9.5)
+        glutSolidSphere(0.8 + moon_t * 0.05, 20, 20)
+        glColor3f(0.76, 0.8, 0.92)
+        glPushMatrix()
+        glTranslatef(-0.18, 0.16, 0.54)
+        glutSolidSphere(0.18, 12, 12)
+        glPopMatrix()
+        glPushMatrix()
+        glTranslatef(0.2, -0.12, 0.48)
+        glutSolidSphere(0.12, 10, 10)
+        glPopMatrix()
+        glPopMatrix()
+
+    glEnable(GL_LIGHTING)
 
 
 def draw_gable_roof(width, height, depth):
@@ -518,7 +626,7 @@ def draw_triangle_panel(center_x, center_y, z_pos, width, height, outer_color, i
 
 def draw_barn_window(center_x, center_y, z_pos):
     frame_color = (0.98, 0.9, 0.82)
-    glass_color = (0.42, 0.18, 0.17)
+    glass_color = mix_color((0.42, 0.18, 0.17), (1.0, 0.88, 0.52), dayNightBlend)
 
     glColor3f(*frame_color)
     glPushMatrix()
@@ -533,6 +641,17 @@ def draw_barn_window(center_x, center_y, z_pos):
     glScalef(0.9, 0.54, 0.08)
     glutSolidCube(1.0)
     glPopMatrix()
+
+    if dayNightBlend > 0.05:
+        glow_color = mix_color((0.55, 0.2, 0.15), (1.0, 0.94, 0.72), dayNightBlend)
+        glDisable(GL_LIGHTING)
+        glColor3f(*glow_color)
+        glPushMatrix()
+        glTranslatef(center_x, center_y, z_pos + 0.065)
+        glScalef(0.98, 0.62, 0.02)
+        glutSolidCube(1.0)
+        glPopMatrix()
+        glEnable(GL_LIGHTING)
 
 
 def draw_barn():
@@ -750,7 +869,7 @@ def draw_goat_body():
         glPopMatrix()
 
 
-def draw_goat(config):
+def get_roaming_sheep_state(config):
     base_x = config["base_x"]
     base_z = config["base_z"]
     radius_x = config["radius_x"]
@@ -761,13 +880,41 @@ def draw_goat(config):
     orbit_z = np.sin(goatWalkPhase * 0.85 + phase) * radius_z
     heading_x = -np.sin(goatWalkPhase + phase) * radius_x
     heading_z = np.cos(goatWalkPhase * 0.85 + phase) * radius_z * 0.85
-    heading = np.degrees(np.arctan2(heading_z, heading_x))
+    heading = -np.degrees(np.arctan2(heading_z, heading_x))
     body_bob = 0.05 * abs(np.sin(goatWalkPhase * 3.0 + phase))
+    return base_x + orbit_x, base_z + orbit_z, heading, body_bob
+
+
+def draw_goat(config):
+    roam_x, roam_z, roam_heading, body_bob = get_roaming_sheep_state(config)
+    shelter_t = smoothstep(dayNightBlend)
+    walk_t = clamp(shelter_t / 0.78, 0.0, 1.0)
+    hide_t = clamp((shelter_t - 0.78) / 0.22, 0.0, 1.0)
+    spot = SHEEP_BARN_SPOTS[config["index"]]
+
+    door_x = lerp(spot["door_x"], spot["inside_x"], hide_t)
+    door_z = lerp(spot["door_z"], spot["inside_z"], hide_t)
+    x_pos = lerp(roam_x, door_x, walk_t)
+    z_pos = lerp(roam_z, door_z, walk_t)
+    y_pos = lerp(0.62 + body_bob, 0.56, walk_t)
+    scale_factor = config["scale"] * (1.0 - hide_t)
+
+    heading_target_x = door_x if dayNightTarget > 0.5 else roam_x
+    heading_target_z = door_z if dayNightTarget > 0.5 else roam_z
+    path_dx = heading_target_x - x_pos
+    path_dz = heading_target_z - z_pos
+    if abs(path_dx) + abs(path_dz) > 0.001 and 0.05 < walk_t < 0.98:
+        heading = -np.degrees(np.arctan2(path_dz, path_dx))
+    else:
+        heading = roam_heading
+
+    if scale_factor <= 0.03:
+        return
 
     glPushMatrix()
-    glTranslatef(base_x + orbit_x, 0.62 + body_bob, base_z + orbit_z)
-    glRotatef(-heading, 0.0, 1.0, 0.0)
-    glScalef(config["scale"], config["scale"], config["scale"])
+    glTranslatef(x_pos, y_pos, z_pos)
+    glRotatef(heading, 0.0, 1.0, 0.0)
+    glScalef(scale_factor, scale_factor, scale_factor)
     draw_goat_body()
     glPopMatrix()
 
@@ -810,6 +957,7 @@ def draw_windmill():
 
 
 def draw_scene():
+    draw_celestial_body()
     draw_farm_plot()
     draw_windmill()
     draw_barn()
@@ -819,27 +967,37 @@ def draw_scene():
 
 
 def display():
+    apply_environment_colors()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
 
     glTranslatef(0.0, -3.2, zoomDistance)
     glRotatef(viewAngleX, 1.0, 0.0, 0.0)
     glRotatef(viewAngleY, 0.0, 1.0, 0.0)
+    apply_environment_lighting()
 
     draw_scene()
     glutSwapBuffers()
 
 
 def timer(value):
-    global angleBlade, goatWalkPhase
+    global angleBlade, goatWalkPhase, dayNightBlend
 
     angleBlade -= 3.0
     if angleBlade <= -360.0:
         angleBlade += 360.0
 
-    goatWalkPhase += 0.025
-    if goatWalkPhase >= np.pi * 2:
-        goatWalkPhase -= np.pi * 2
+    if abs(dayNightBlend - dayNightTarget) > 0.001:
+        step = 0.012
+        if dayNightBlend < dayNightTarget:
+            dayNightBlend = min(dayNightBlend + step, dayNightTarget)
+        else:
+            dayNightBlend = max(dayNightBlend - step, dayNightTarget)
+
+    if dayNightTarget < 0.5 and dayNightBlend <= 0.02:
+        goatWalkPhase += 0.025
+        if goatWalkPhase >= np.pi * 2:
+            goatWalkPhase -= np.pi * 2
 
     glutPostRedisplay()
     glutTimerFunc(16, timer, 0)
@@ -924,7 +1082,7 @@ def specialKeys(key, x, y):
 
 
 def keyboard(key, x, y):
-    global zoomDistance
+    global zoomDistance, dayNightTarget
 
     if key == b'+' or key == b'=':
         zoomDistance += 0.6
@@ -934,6 +1092,12 @@ def keyboard(key, x, y):
         zoomDistance -= 0.6
         if zoomDistance < -42.0:
             zoomDistance = -42.0
+    elif key == b't' or key == b'T':
+        dayNightTarget = 0.0 if dayNightTarget > 0.5 else 1.0
+    elif key == b'1':
+        dayNightTarget = 0.0
+    elif key == b'2':
+        dayNightTarget = 1.0
     glutPostRedisplay()
 
 
@@ -954,7 +1118,7 @@ def main():
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(900, 650)
     glutInitWindowPosition(100, 100)
-    glutCreateWindow(b"WINDMILL FARM - GOAT BARN SCENE")
+    glutCreateWindow(b"WINDMILL FARM - DAY NIGHT BARN SCENE")
 
     init()
 
