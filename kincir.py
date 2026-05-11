@@ -22,9 +22,18 @@ lastMouseY = 0
 currentTime = 0
 targetTime = 0
 timeBlend = 0.0
+previousTime = 0  # Untuk tracking transisi
+transitionStartBlend = 0.0  # Blend saat transisi dimulai
 
 # Animasi serigala
 wolfWalkPhase = 0.0
+
+# Animasi peternak (farmer)
+farmerWalkPhase = 0.0
+farmerArmSwing = 0.0
+
+# Animasi sungai
+riverFlowPhase = 0.0
 
 GOAT_CONFIGS = [
     {"index": 0, "base_x": -5.8, "base_z": 3.2, "scale": 0.8, "radius_x": 0.8, "radius_z": 0.5, "phase": 0.0},
@@ -43,7 +52,7 @@ NIGHT_SKY_COLOR = (0.05, 0.08, 0.18, 1.0)
 
 # Konfigurasi waktu untuk 4 periode
 TIME_CONFIGS = {
-    0: {"hour": 7, "minute": 0, "name": "Pagi", "sky_blend": 0.0},      # 07:00 Siang
+    0: {"hour": 7, "minute": 0, "name": "Pagi", "sky_blend": 0.0},      # 07:00 Pagi
     1: {"hour": 10, "minute": 0, "name": "Siang", "sky_blend": 0.15},   # 10:00 Jam Makan
     2: {"hour": 19, "minute": 0, "name": "Sore", "sky_blend": 0.75},    # 19:00 Malam
     3: {"hour": 23, "minute": 0, "name": "Malam", "sky_blend": 1.0},    # 23:00 Tengah Malam
@@ -233,14 +242,7 @@ def draw_time_display():
 
 
 def draw_instructions_panel():
-    """Menampilkan panel instruksi di kiri bawah"""
-    instructions = [
-        "T : Toggle waktu",
-        "1 : Siang (07:00)",
-        "2 : Jam makan (10:00)",
-        "3 : Malam (19:00)",
-        "4 : Tengah malam (23:00)",
-    ]
+    """Menampilkan panel instruksi dengan tombol untuk mobile"""
     
     # Simpan state
     glMatrixMode(GL_PROJECTION)
@@ -259,8 +261,8 @@ def draw_instructions_panel():
     glBegin(GL_QUADS)
     glVertex2f(10, 10)
     glVertex2f(280, 10)
-    glVertex2f(280, 120)
-    glVertex2f(10, 120)
+    glVertex2f(280, 200)
+    glVertex2f(10, 200)
     glEnd()
     
     # Border
@@ -269,17 +271,98 @@ def draw_instructions_panel():
     glBegin(GL_LINE_LOOP)
     glVertex2f(10, 10)
     glVertex2f(280, 10)
-    glVertex2f(280, 120)
-    glVertex2f(10, 120)
+    glVertex2f(280, 200)
+    glVertex2f(10, 200)
     glEnd()
     
-    # Teks instruksi
-    glColor3f(1.0, 1.0, 1.0)
-    glLineWidth(1.5)
-    y_pos = 95
-    for instruction in instructions:
-        draw_text_stroke(20, y_pos, instruction, 0.08)
-        y_pos -= 18
+    # Tombol-tombol dengan simbol
+    buttons = [
+        {"key": "T", "label": "T : untuk toggle waktu.", "y": 170, "icon": "T"},
+        {"key": "1", "label": "1: untuk pagi (07:00)", "y": 135, "icon": "1"},
+        {"key": "2", "label": "2: untuk siang (10:00)", "y": 100, "icon": "2"},
+    ]
+    
+    for btn in buttons:
+        # Tombol background
+        if btn["key"] == str(currentTime + 1) or (btn["key"] == "T"):
+            # Highlight tombol aktif
+            glColor4f(0.3, 0.5, 0.7, 0.8)
+        else:
+            glColor4f(0.2, 0.2, 0.2, 0.8)
+        
+        # Kotak tombol
+        btn_x = 20
+        btn_y = btn["y"]
+        btn_size = 25
+        
+        glBegin(GL_QUADS)
+        glVertex2f(btn_x, btn_y)
+        glVertex2f(btn_x + btn_size, btn_y)
+        glVertex2f(btn_x + btn_size, btn_y + btn_size)
+        glVertex2f(btn_x, btn_y + btn_size)
+        glEnd()
+        
+        # Border tombol
+        glColor3f(0.9, 0.9, 0.9)
+        glLineWidth(1.5)
+        glBegin(GL_LINE_LOOP)
+        glVertex2f(btn_x, btn_y)
+        glVertex2f(btn_x + btn_size, btn_y)
+        glVertex2f(btn_x + btn_size, btn_y + btn_size)
+        glVertex2f(btn_x, btn_y + btn_size)
+        glEnd()
+        
+        # Icon/simbol di tombol
+        glColor3f(1.0, 1.0, 1.0)
+        glLineWidth(2.0)
+        draw_text_stroke(btn_x + 5, btn_y + 5, btn["icon"], 0.12)
+        
+        # Label teks
+        glColor3f(1.0, 1.0, 1.0)
+        glLineWidth(1.5)
+        draw_text_stroke(btn_x + btn_size + 10, btn_y + 5, btn["label"], 0.08)
+    
+    # Tambahan info untuk jam 3 dan 4
+    extra_info = [
+        {"label": "3: untuk malam (19:00)", "y": 65},
+        {"label": "4: untuk tengah malam (23:00)", "y": 30},
+    ]
+    
+    for info in extra_info:
+        # Tombol kecil
+        btn_x = 20
+        btn_y = info["y"]
+        btn_size = 25
+        btn_num = "3" if info["y"] == 65 else "4"
+        
+        if btn_num == str(currentTime + 1):
+            glColor4f(0.3, 0.5, 0.7, 0.8)
+        else:
+            glColor4f(0.2, 0.2, 0.2, 0.8)
+        
+        glBegin(GL_QUADS)
+        glVertex2f(btn_x, btn_y)
+        glVertex2f(btn_x + btn_size, btn_y)
+        glVertex2f(btn_x + btn_size, btn_y + btn_size)
+        glVertex2f(btn_x, btn_y + btn_size)
+        glEnd()
+        
+        glColor3f(0.9, 0.9, 0.9)
+        glLineWidth(1.5)
+        glBegin(GL_LINE_LOOP)
+        glVertex2f(btn_x, btn_y)
+        glVertex2f(btn_x + btn_size, btn_y)
+        glVertex2f(btn_x + btn_size, btn_y + btn_size)
+        glVertex2f(btn_x, btn_y + btn_size)
+        glEnd()
+        
+        glColor3f(1.0, 1.0, 1.0)
+        glLineWidth(2.0)
+        draw_text_stroke(btn_x + 5, btn_y + 5, btn_num, 0.12)
+        
+        glColor3f(1.0, 1.0, 1.0)
+        glLineWidth(1.5)
+        draw_text_stroke(btn_x + btn_size + 10, btn_y + 5, info["label"], 0.08)
     
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_LIGHTING)
@@ -321,35 +404,530 @@ def draw_grass_patch(x, z, density=20, size=1.5):
     glEnable(GL_LIGHTING)
 
 
-def draw_wolf():
-    """Menggambar serigala yang mengintai dengan animasi jalan-jalan"""
-    if currentTime != 3:  # Hanya muncul di tengah malam
+def draw_tree(x, z, height=3.5, trunk_radius=0.25, canopy_radius=1.2):
+    """Menggambar pohon dengan batang dan kanopi"""
+    glPushMatrix()
+    glTranslatef(x, 0.0, z)
+    
+    # Trunk (batang pohon)
+    glColor3f(0.4, 0.26, 0.13)  # Coklat
+    glPushMatrix()
+    glTranslatef(0.0, height/2, 0.0)
+    glScalef(trunk_radius, height, trunk_radius)
+    glutSolidCube(1.0)
+    glPopMatrix()
+    
+    # Canopy (daun) - 3 layer untuk tampilan lebih penuh
+    # Layer bawah (paling besar)
+    glColor3f(0.15, 0.5, 0.15)  # Hijau gelap
+    glPushMatrix()
+    glTranslatef(0.0, height * 0.7, 0.0)
+    glutSolidSphere(canopy_radius * 1.2, 12, 12)
+    glPopMatrix()
+    
+    # Layer tengah
+    glColor3f(0.2, 0.6, 0.2)  # Hijau sedang
+    glPushMatrix()
+    glTranslatef(0.0, height * 0.85, 0.0)
+    glutSolidSphere(canopy_radius, 12, 12)
+    glPopMatrix()
+    
+    # Layer atas (paling kecil)
+    glColor3f(0.25, 0.65, 0.25)  # Hijau terang
+    glPushMatrix()
+    glTranslatef(0.0, height, 0.0)
+    glutSolidSphere(canopy_radius * 0.7, 12, 12)
+    glPopMatrix()
+    
+    glPopMatrix()
+
+
+def draw_pine_tree(x, z, height=4.0, base_radius=1.0):
+    """Menggambar pohon pinus (cone shape)"""
+    glPushMatrix()
+    glTranslatef(x, 0.0, z)
+    
+    # Trunk
+    glColor3f(0.35, 0.22, 0.12)  # Coklat gelap
+    glPushMatrix()
+    glTranslatef(0.0, height * 0.25, 0.0)
+    glScalef(0.2, height * 0.5, 0.2)
+    glutSolidCube(1.0)
+    glPopMatrix()
+    
+    # Pine canopy - 3 cone layers
+    cone_colors = [
+        (0.12, 0.45, 0.12),  # Hijau gelap
+        (0.15, 0.5, 0.15),   # Hijau sedang
+        (0.18, 0.55, 0.18),  # Hijau terang
+    ]
+    
+    for i, color in enumerate(cone_colors):
+        glColor3f(*color)
+        glPushMatrix()
+        y_offset = height * 0.4 + i * height * 0.2
+        glTranslatef(0.0, y_offset, 0.0)
+        glRotatef(-90, 1, 0, 0)
+        radius = base_radius * (1.0 - i * 0.25)
+        cone_height = height * 0.35
+        glutSolidCone(radius, cone_height, 12, 8)
+        glPopMatrix()
+    
+    glPopMatrix()
+
+
+def draw_river():
+    """Menggambar sungai dengan animasi arus"""
+    # Sungai mengalir dari kiri belakang ke kanan belakang (di belakang barn)
+    river_start_x = -16.0
+    river_end_x = 14.0
+    river_z = -9.5  # Di belakang barn
+    river_width = 2.5
+    
+    # Base sungai (air)
+    glColor3f(0.2, 0.4, 0.7)  # Biru air
+    glBegin(GL_QUADS)
+    glNormal3f(0.0, 1.0, 0.0)
+    glVertex3f(river_start_x, 0.01, river_z - river_width/2)
+    glVertex3f(river_end_x, 0.01, river_z - river_width/2)
+    glVertex3f(river_end_x, 0.01, river_z + river_width/2)
+    glVertex3f(river_start_x, 0.01, river_z + river_width/2)
+    glEnd()
+    
+    # Animasi arus air (gelombang bergerak)
+    glDisable(GL_LIGHTING)
+    num_waves = 15
+    wave_length = (river_end_x - river_start_x) / num_waves
+    
+    for i in range(num_waves):
+        # Hitung posisi gelombang dengan offset animasi
+        wave_offset = (riverFlowPhase + i * 0.4) % (np.pi * 2)
+        wave_x = river_start_x + i * wave_length + np.sin(wave_offset) * 0.3
+        wave_amplitude = 0.15 + np.sin(wave_offset) * 0.08
+        
+        # Warna gelombang (lebih terang dari air)
+        wave_brightness = 0.5 + np.sin(wave_offset) * 0.2
+        glColor3f(0.3 + wave_brightness * 0.2, 0.5 + wave_brightness * 0.2, 0.8 + wave_brightness * 0.1)
+        
+        # Gambar gelombang sebagai garis melengkung
+        glLineWidth(2.0)
+        glBegin(GL_LINE_STRIP)
+        for j in range(8):
+            t = j / 7.0
+            x = wave_x + t * wave_length * 0.6
+            z = river_z - river_width/2 + t * river_width
+            y = 0.02 + np.sin(t * np.pi) * wave_amplitude * 0.1
+            glVertex3f(x, y, z)
+        glEnd()
+    
+    glEnable(GL_LIGHTING)
+    
+    # Tepi sungai (tanah/rumput)
+    glColor3f(0.3, 0.5, 0.2)  # Hijau gelap
+    
+    # Tepi kiri
+    glBegin(GL_QUADS)
+    glNormal3f(0.0, 1.0, 0.0)
+    glVertex3f(river_start_x, 0.01, river_z - river_width/2 - 0.5)
+    glVertex3f(river_end_x, 0.01, river_z - river_width/2 - 0.5)
+    glVertex3f(river_end_x, 0.01, river_z - river_width/2)
+    glVertex3f(river_start_x, 0.01, river_z - river_width/2)
+    glEnd()
+    
+    # Tepi kanan
+    glBegin(GL_QUADS)
+    glNormal3f(0.0, 1.0, 0.0)
+    glVertex3f(river_start_x, 0.01, river_z + river_width/2)
+    glVertex3f(river_end_x, 0.01, river_z + river_width/2)
+    glVertex3f(river_end_x, 0.01, river_z + river_width/2 + 0.5)
+    glVertex3f(river_start_x, 0.01, river_z + river_width/2 + 0.5)
+    glEnd()
+
+
+def draw_farmer():
+    """Menggambar peternak (farmer) dengan animasi dan transisi lengkap"""
+    
+    # Hitung posisi dan alpha berdasarkan waktu
+    farmer_alpha = 0.0
+    farmer_x = 0.0
+    farmer_z = 0.0
+    farmer_heading = 0.0
+    farmer_action = None  # 'entering', 'herding', 'exiting'
+    
+    gate_x = 2.85  # Posisi gerbang
+    gate_z = 8.5
+    center_x = 0.0  # Posisi tengah (jam 10)
+    center_z = 3.0
+    door_x = 2.2  # Posisi depan pintu barn (jam 19)
+    door_z = 1.8
+    
+    is_transitioning = (previousTime != currentTime)
+    
+    # ===== JAM 7 (PAGI) - TIDAK ADA PETERNAK =====
+    if currentTime == 0:
+        if is_transitioning and previousTime == 1:
+            # Transisi dari jam 10 ke jam 7 - peternak keluar
+            transition_progress = 1.0 - (abs(dayNightBlend - TIME_CONFIGS[0]["sky_blend"]) / abs(TIME_CONFIGS[1]["sky_blend"] - TIME_CONFIGS[0]["sky_blend"]))
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            # Fade out sambil jalan ke gerbang
+            farmer_alpha = 1.0 - transition_progress
+            farmer_x = lerp(center_x, gate_x, transition_progress)
+            farmer_z = lerp(center_z, gate_z, transition_progress)
+            farmer_heading = 0.0  # Menghadap gerbang
+            farmer_action = 'exiting'
+        
+        elif is_transitioning and previousTime == 2:
+            # Transisi dari jam 19 ke jam 7 - peternak keluar dari pintu
+            transition_progress = 1.0 - (abs(dayNightBlend - TIME_CONFIGS[0]["sky_blend"]) / abs(TIME_CONFIGS[2]["sky_blend"] - TIME_CONFIGS[0]["sky_blend"]))
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            # Fade out sambil jalan ke gerbang
+            farmer_alpha = 1.0 - transition_progress
+            farmer_x = lerp(door_x, gate_x, transition_progress)
+            farmer_z = lerp(door_z, gate_z, transition_progress)
+            farmer_heading = 0.0
+            farmer_action = 'exiting'
+        
+        elif is_transitioning and previousTime == 3:
+            # Transisi dari jam 23 ke jam 7 - sudah keluar, tidak render
+            return
+        else:
+            # Tidak ada peternak di jam 7
+            return
+    
+    # ===== JAM 10 (JAM MAKAN) - PETERNAK DI TENGAH =====
+    elif currentTime == 1:
+        if is_transitioning and previousTime == 0:
+            # Transisi dari jam 7 ke jam 10 - peternak masuk
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[0]["sky_blend"]) / abs(TIME_CONFIGS[1]["sky_blend"] - TIME_CONFIGS[0]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            # Fade in sambil jalan dari gerbang ke tengah
+            if transition_progress < 0.3:
+                farmer_alpha = transition_progress / 0.3
+            else:
+                farmer_alpha = 1.0
+            
+            farmer_x = lerp(gate_x, center_x, transition_progress)
+            farmer_z = lerp(gate_z, center_z, transition_progress)
+            farmer_heading = 180.0  # Menghadap ke dalam
+            farmer_action = 'entering'
+        
+        elif is_transitioning and previousTime == 2:
+            # Transisi dari jam 19 ke jam 10 - peternak jalan dari pintu ke tengah
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[2]["sky_blend"]) / abs(TIME_CONFIGS[1]["sky_blend"] - TIME_CONFIGS[2]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            farmer_alpha = 1.0
+            farmer_x = lerp(door_x, center_x, transition_progress)
+            farmer_z = lerp(door_z, center_z, transition_progress)
+            farmer_heading = 180.0
+            farmer_action = 'entering'
+        
+        elif is_transitioning and previousTime == 3:
+            # Transisi dari jam 23 ke jam 10 - peternak masuk dari gerbang
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[3]["sky_blend"]) / abs(TIME_CONFIGS[1]["sky_blend"] - TIME_CONFIGS[3]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            if transition_progress < 0.3:
+                farmer_alpha = transition_progress / 0.3
+            else:
+                farmer_alpha = 1.0
+            
+            farmer_x = lerp(gate_x, center_x, transition_progress)
+            farmer_z = lerp(gate_z, center_z, transition_progress)
+            farmer_heading = 180.0
+            farmer_action = 'entering'
+        
+        else:
+            # Sudah di posisi, berdiri di tengah
+            farmer_alpha = 1.0
+            farmer_x = center_x
+            farmer_z = center_z
+            farmer_heading = 180.0
+            farmer_action = 'herding'
+    
+    # ===== JAM 19 (MALAM) - PETERNAK DI PINTU BARN =====
+    elif currentTime == 2:
+        if is_transitioning and previousTime == 0:
+            # Transisi dari jam 7 ke jam 19 - peternak masuk ke pintu
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[0]["sky_blend"]) / abs(TIME_CONFIGS[2]["sky_blend"] - TIME_CONFIGS[0]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            if transition_progress < 0.3:
+                farmer_alpha = transition_progress / 0.3
+            else:
+                farmer_alpha = 1.0
+            
+            # Jalan dari gerbang ke pintu
+            if transition_progress < 0.5:
+                # Fase 1: Gerbang ke tengah
+                phase1 = transition_progress / 0.5
+                farmer_x = lerp(gate_x, center_x, phase1)
+                farmer_z = lerp(gate_z, center_z, phase1)
+            else:
+                # Fase 2: Tengah ke pintu
+                phase2 = (transition_progress - 0.5) / 0.5
+                farmer_x = lerp(center_x, door_x, phase2)
+                farmer_z = lerp(center_z, door_z, phase2)
+            
+            farmer_heading = 90.0
+            farmer_action = 'entering'
+        
+        elif is_transitioning and previousTime == 1:
+            # Transisi dari jam 10 ke jam 19 - peternak jalan dari tengah ke pintu
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[1]["sky_blend"]) / abs(TIME_CONFIGS[2]["sky_blend"] - TIME_CONFIGS[1]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            farmer_alpha = 1.0
+            farmer_x = lerp(center_x, door_x, transition_progress)
+            farmer_z = lerp(center_z, door_z, transition_progress)
+            farmer_heading = 90.0
+            farmer_action = 'entering'
+        
+        elif is_transitioning and previousTime == 3:
+            # Transisi dari jam 23 ke jam 19 - peternak masuk dari gerbang ke pintu
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[3]["sky_blend"]) / abs(TIME_CONFIGS[2]["sky_blend"] - TIME_CONFIGS[3]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            if transition_progress < 0.3:
+                farmer_alpha = transition_progress / 0.3
+            else:
+                farmer_alpha = 1.0
+            
+            # Jalan dari gerbang ke pintu
+            if transition_progress < 0.5:
+                phase1 = transition_progress / 0.5
+                farmer_x = lerp(gate_x, center_x, phase1)
+                farmer_z = lerp(gate_z, center_z, phase1)
+            else:
+                phase2 = (transition_progress - 0.5) / 0.5
+                farmer_x = lerp(center_x, door_x, phase2)
+                farmer_z = lerp(center_z, door_z, phase2)
+            
+            farmer_heading = 90.0
+            farmer_action = 'entering'
+        
+        else:
+            # Sudah di posisi, berdiri di pintu
+            farmer_alpha = 1.0
+            farmer_x = door_x
+            farmer_z = door_z
+            farmer_heading = 90.0
+            farmer_action = 'herding'
+    
+    # ===== JAM 23 (TENGAH MALAM) - PETERNAK KELUAR =====
+    elif currentTime == 3:
+        if is_transitioning and previousTime == 1:
+            # Transisi dari jam 10 ke jam 23 - peternak keluar dari tengah
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[1]["sky_blend"]) / abs(TIME_CONFIGS[3]["sky_blend"] - TIME_CONFIGS[1]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            # Fade out sambil jalan ke gerbang
+            farmer_alpha = 1.0 - transition_progress
+            farmer_x = lerp(center_x, gate_x, transition_progress)
+            farmer_z = lerp(center_z, gate_z, transition_progress)
+            farmer_heading = 0.0
+            farmer_action = 'exiting'
+        
+        elif is_transitioning and previousTime == 2:
+            # Transisi dari jam 19 ke jam 23 - peternak keluar dari pintu
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[2]["sky_blend"]) / abs(TIME_CONFIGS[3]["sky_blend"] - TIME_CONFIGS[2]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            # Fade out sambil jalan ke gerbang
+            farmer_alpha = 1.0 - transition_progress
+            farmer_x = lerp(door_x, gate_x, transition_progress)
+            farmer_z = lerp(door_z, gate_z, transition_progress)
+            farmer_heading = 0.0
+            farmer_action = 'exiting'
+        
+        elif is_transitioning and previousTime == 0:
+            # Transisi dari jam 7 ke jam 23 - tidak ada peternak
+            return
+        
+        else:
+            # Sudah keluar, tidak render
+            return
+    
+    # Jika alpha terlalu kecil, tidak render
+    if farmer_alpha < 0.01:
         return
     
-    # Animasi jalan-jalan dalam pola elips
-    patrol_radius_x = 2.5
-    patrol_radius_z = 1.5
-    base_x = -12.5
-    base_z = 5.0
+    # Animasi berjalan
+    if farmer_action in ['entering', 'exiting']:
+        leg_swing = np.sin(farmerWalkPhase * 4.0) * 20.0
+        arm_swing = np.sin(farmerWalkPhase * 4.0) * 15.0
+        body_bob = abs(np.sin(farmerWalkPhase * 4.0)) * 0.05
+    else:
+        # Berdiri, animasi subtle
+        leg_swing = 0.0
+        arm_swing = np.sin(farmerArmSwing) * 10.0  # Lambaian tangan
+        body_bob = 0.0
     
-    # Posisi serigala berdasarkan fase animasi
-    wolf_x = base_x + np.cos(wolfWalkPhase) * patrol_radius_x
-    wolf_z = base_z + np.sin(wolfWalkPhase * 0.8) * patrol_radius_z
+    glPushMatrix()
+    glTranslatef(farmer_x, 0.0, farmer_z)
+    glRotatef(farmer_heading, 0, 1, 0)
     
-    # Heading mengikuti arah gerakan
+    # Body
+    glColor4f(0.2, 0.3, 0.6, farmer_alpha)  # Baju biru
+    glPushMatrix()
+    glTranslatef(0.0, 1.2 + body_bob, 0.0)
+    glScalef(0.6, 0.8, 0.4)
+    glutSolidCube(1.0)
+    glPopMatrix()
+    
+    # Head
+    glColor4f(0.9, 0.7, 0.6, farmer_alpha)  # Kulit
+    glPushMatrix()
+    glTranslatef(0.0, 1.9 + body_bob, 0.0)
+    glutSolidSphere(0.25, 12, 12)
+    glPopMatrix()
+    
+    # Hat (topi)
+    glColor4f(0.6, 0.4, 0.2, farmer_alpha)  # Coklat
+    glPushMatrix()
+    glTranslatef(0.0, 2.15 + body_bob, 0.0)
+    glScalef(0.35, 0.15, 0.35)
+    glutSolidCube(1.0)
+    glPopMatrix()
+    
+    glPushMatrix()
+    glTranslatef(0.0, 2.25 + body_bob, 0.0)
+    glScalef(0.25, 0.2, 0.25)
+    glutSolidCube(1.0)
+    glPopMatrix()
+    
+    # Arms
+    glColor4f(0.2, 0.3, 0.6, farmer_alpha)
+    
+    # Left arm
+    glPushMatrix()
+    glTranslatef(-0.4, 1.3 + body_bob, 0.0)
+    glRotatef(arm_swing, 1, 0, 0)
+    glTranslatef(0.0, -0.25, 0.0)
+    glScalef(0.15, 0.5, 0.15)
+    glutSolidCube(1.0)
+    glPopMatrix()
+    
+    # Right arm
+    glPushMatrix()
+    glTranslatef(0.4, 1.3 + body_bob, 0.0)
+    glRotatef(-arm_swing, 1, 0, 0)
+    glTranslatef(0.0, -0.25, 0.0)
+    glScalef(0.15, 0.5, 0.15)
+    glutSolidCube(1.0)
+    glPopMatrix()
+    
+    # Legs
+    glColor4f(0.3, 0.2, 0.1, farmer_alpha)  # Celana coklat
+    
+    # Left leg
+    glPushMatrix()
+    glTranslatef(-0.15, 0.6, 0.0)
+    glRotatef(leg_swing, 1, 0, 0)
+    glTranslatef(0.0, -0.3, 0.0)
+    glScalef(0.18, 0.6, 0.18)
+    glutSolidCube(1.0)
+    glPopMatrix()
+    
+    # Right leg
+    glPushMatrix()
+    glTranslatef(0.15, 0.6, 0.0)
+    glRotatef(-leg_swing, 1, 0, 0)
+    glTranslatef(0.0, -0.3, 0.0)
+    glScalef(0.18, 0.6, 0.18)
+    glutSolidCube(1.0)
+    glPopMatrix()
+    
+    # Boots
+    glColor4f(0.2, 0.15, 0.1, farmer_alpha)
+    for boot_x in (-0.15, 0.15):
+        glPushMatrix()
+        glTranslatef(boot_x, 0.1, 0.05)
+        glScalef(0.2, 0.15, 0.25)
+        glutSolidCube(1.0)
+        glPopMatrix()
+    
+    glPopMatrix()
+
+
+def draw_wolf():
+    """Menggambar serigala yang mengintai dengan animasi jalan-jalan"""
+    
+    wolf_alpha = 0.0
+    
+    # Logika fade in/out berdasarkan transisi waktu
+    if currentTime == 3:
+        # Jam 23:00 - serigala muncul
+        if previousTime != 3:
+            # Baru masuk ke jam 23:00 - fade in
+            # dayNightBlend akan naik dari transitionStartBlend ke 1.0
+            if dayNightBlend < 1.0:
+                # Hitung progress fade in (0.0 to 1.0)
+                fade_range = 1.0 - transitionStartBlend
+                if fade_range > 0.01:
+                    fade_progress = (dayNightBlend - transitionStartBlend) / fade_range
+                    wolf_alpha = clamp(fade_progress, 0.0, 1.0)
+                else:
+                    wolf_alpha = 1.0
+            else:
+                wolf_alpha = 1.0
+        else:
+            # Sudah di jam 23:00 dari sebelumnya
+            wolf_alpha = 1.0
+    else:
+        # Bukan jam 23:00
+        if previousTime == 3:
+            # Baru keluar dari jam 23:00 - fade out
+            # dayNightBlend akan turun dari 1.0 ke target blend
+            target_blend = TIME_CONFIGS[currentTime]["sky_blend"]
+            if dayNightBlend > target_blend:
+                # Hitung progress fade out (1.0 to 0.0)
+                fade_range = 1.0 - target_blend
+                if fade_range > 0.01:
+                    fade_progress = (dayNightBlend - target_blend) / fade_range
+                    wolf_alpha = clamp(fade_progress, 0.0, 1.0)
+                else:
+                    wolf_alpha = 0.0
+            else:
+                wolf_alpha = 0.0
+        else:
+            # Tidak di jam 23:00 dan tidak baru keluar
+            return
+    
+    # Jika alpha terlalu kecil, tidak perlu render
+    if wolf_alpha < 0.01:
+        return
+    
+    # Animasi jalan-jalan dalam pola elips (sama seperti domba tapi lebih cepat)
+    # Pagar kiri di x = -11.0, jadi serigala patrol di luar dengan jarak aman
+    patrol_radius_x = 1.2
+    patrol_radius_z = 2.5
+    base_x = -14.0
+    base_z = 2.0
+    
+    # Posisi serigala berdasarkan fase animasi (sama seperti domba)
+    orbit_x = np.cos(wolfWalkPhase) * patrol_radius_x
+    orbit_z = np.sin(wolfWalkPhase * 0.85) * patrol_radius_z
+    wolf_x = base_x + orbit_x
+    wolf_z = base_z + orbit_z
+    
+    # Heading calculation (sama seperti domba)
     heading_x = -np.sin(wolfWalkPhase) * patrol_radius_x
-    heading_z = np.cos(wolfWalkPhase * 0.8) * patrol_radius_z * 0.8
+    heading_z = np.cos(wolfWalkPhase * 0.85) * patrol_radius_z * 0.85
     heading = -np.degrees(np.arctan2(heading_z, heading_x))
     
     # Body bobbing saat berjalan
     body_bob = 0.03 * abs(np.sin(wolfWalkPhase * 4.0))
     
     glPushMatrix()
-    glTranslatef(wolf_x, 0.5 + body_bob, wolf_z)
+    glTranslatef(wolf_x, 0.35 + body_bob, wolf_z)  # Turunkan dari 0.5 ke 0.35 agar lebih menjorok ke tanah
     glRotatef(heading, 0, 1, 0)
     
-    # Body (gelap)
-    glColor3f(0.15, 0.15, 0.18)
+    # Body (gelap) dengan alpha
+    glColor4f(0.15, 0.15, 0.18, wolf_alpha)
     glPushMatrix()
     glScalef(1.2, 0.7, 0.6)
     glutSolidCube(1.0)
@@ -363,7 +941,7 @@ def draw_wolf():
     glPopMatrix()
     
     # Snout
-    glColor3f(0.12, 0.12, 0.15)
+    glColor4f(0.12, 0.12, 0.15, wolf_alpha)
     glPushMatrix()
     glTranslatef(1.0, 0.1, 0.0)
     glScalef(0.3, 0.2, 0.25)
@@ -371,7 +949,7 @@ def draw_wolf():
     glPopMatrix()
     
     # Ears
-    glColor3f(0.15, 0.15, 0.18)
+    glColor4f(0.15, 0.15, 0.18, wolf_alpha)
     for ear_z in (-0.15, 0.15):
         glPushMatrix()
         glTranslatef(0.7, 0.5, ear_z)
@@ -379,9 +957,9 @@ def draw_wolf():
         glutSolidCube(1.0)
         glPopMatrix()
     
-    # Glowing eyes (merah menyala)
+    # Glowing eyes (merah menyala) dengan alpha
     glDisable(GL_LIGHTING)
-    glColor3f(1.0, 0.2, 0.0)
+    glColor4f(1.0, 0.2, 0.0, wolf_alpha)
     for eye_z in (-0.12, 0.12):
         glPushMatrix()
         glTranslatef(0.95, 0.25, eye_z)
@@ -389,8 +967,8 @@ def draw_wolf():
         glPopMatrix()
     glEnable(GL_LIGHTING)
     
-    # Legs dengan animasi berjalan
-    glColor3f(0.12, 0.12, 0.15)
+    # Legs dengan animasi berjalan dengan alpha
+    glColor4f(0.12, 0.12, 0.15, wolf_alpha)
     leg_positions = [(-0.3, 0.2), (-0.3, -0.2), (0.3, 0.2), (0.3, -0.2)]
     for i, (leg_x, leg_z) in enumerate(leg_positions):
         # Animasi kaki: kaki depan dan belakang bergantian
@@ -406,8 +984,8 @@ def draw_wolf():
         glutSolidCube(1.0)
         glPopMatrix()
     
-    # Tail dengan animasi
-    glColor3f(0.15, 0.15, 0.18)
+    # Tail dengan animasi dan alpha
+    glColor4f(0.15, 0.15, 0.18, wolf_alpha)
     tail_swing = np.sin(wolfWalkPhase * 3.0) * 15
     glPushMatrix()
     glTranslatef(-0.7, 0.1, 0.0)
@@ -422,18 +1000,44 @@ def draw_wolf():
 def draw_celestial_body():
     glDisable(GL_LIGHTING)
 
+    # Posisi matahari/bulan berdasarkan waktu
+    # Jam 07:00 (currentTime=0): Matahari di timur (kiri)
+    # Jam 10:00 (currentTime=1): Matahari hampir di atas (90 derajat)
+    # Jam 19:00 (currentTime=2): Bulan di timur (kiri)
+    # Jam 23:00 (currentTime=3): Bulan hampir di atas (90 derajat)
+    
     if dayNightBlend < 0.55:
+        # Matahari (siang)
         sun_t = 1.0 - smoothstep(dayNightBlend / 0.55)
+        
+        # Hitung posisi berdasarkan currentTime
+        if currentTime == 0:
+            # Jam 07:00 - Matahari di timur (kiri, rendah)
+            sun_x = -8.0
+            sun_y = 8.0
+            sun_z = -10.0
+        elif currentTime == 1:
+            # Jam 10:00 - Matahari hampir di atas (tengah, tinggi)
+            sun_x = 2.0
+            sun_y = 14.0
+            sun_z = -10.0
+        else:
+            # Transisi atau malam - posisi default
+            sun_x = 9.0
+            sun_y = 13.2
+            sun_z = -10.0
+        
         glColor3f(1.0, 0.88, 0.28)
         glPushMatrix()
-        glTranslatef(9.0, 13.2, -10.0)
+        glTranslatef(sun_x, sun_y, sun_z)
         glutSolidSphere(0.95 + sun_t * 0.08, 20, 20)
         glPopMatrix()
 
+        # Sinar matahari
         glColor3f(1.0, 0.78, 0.2)
         for angle in range(0, 360, 45):
             glPushMatrix()
-            glTranslatef(9.0, 13.2, -10.0)
+            glTranslatef(sun_x, sun_y, sun_z)
             glRotatef(float(angle), 0.0, 0.0, 1.0)
             glTranslatef(0.0, 1.35, 0.0)
             glScalef(0.12, 0.5, 0.12)
@@ -441,11 +1045,32 @@ def draw_celestial_body():
             glPopMatrix()
 
     if dayNightBlend > 0.2:
+        # Bulan (malam)
         moon_t = smoothstep((dayNightBlend - 0.2) / 0.8)
+        
+        # Hitung posisi berdasarkan currentTime
+        if currentTime == 2:
+            # Jam 19:00 - Bulan di timur (kiri, rendah)
+            moon_x = -8.5
+            moon_y = 8.5
+            moon_z = -9.5
+        elif currentTime == 3:
+            # Jam 23:00 - Bulan hampir di atas (tengah, tinggi)
+            moon_x = 0.0
+            moon_y = 14.0
+            moon_z = -9.5
+        else:
+            # Transisi atau siang - posisi default
+            moon_x = -9.5
+            moon_y = 12.2
+            moon_z = -9.5
+        
         glColor3f(0.92, 0.93, 1.0)
         glPushMatrix()
-        glTranslatef(-9.5, 12.2, -9.5)
+        glTranslatef(moon_x, moon_y, moon_z)
         glutSolidSphere(0.8 + moon_t * 0.05, 20, 20)
+        
+        # Kawah bulan
         glColor3f(0.76, 0.8, 0.92)
         glPushMatrix()
         glTranslatef(-0.18, 0.16, 0.54)
@@ -558,7 +1183,8 @@ def draw_blade():
 
 
 def draw_ground_patch():
-    left = -13.8
+    # Perluas tanah ke kiri untuk area serigala
+    left = -16.5  # Diperluas dari -13.8 ke -16.5 (tambah 2.7 unit)
     right = 13.8
     front = 11.2
     back = -11.2
@@ -582,6 +1208,7 @@ def draw_ground_patch():
     ]
 
     for y_top, y_bottom, color, spread in sediment_layers:
+        # Perluas layer tanah ke kiri juga
         layer_left = left - spread
         layer_right = right + spread
         layer_front = front + spread
@@ -820,6 +1447,32 @@ def draw_farm_plot():
     draw_grass_patch(0.0, 5.5, 25, 2.0)
     draw_grass_patch(-7.0, 2.0, 20, 1.5)
     draw_grass_patch(4.0, 4.5, 18, 1.4)
+    
+    # Rumput di area serigala (kiri luar pagar)
+    draw_grass_patch(-14.0, 2.0, 22, 1.6)  # Area patrol serigala
+    draw_grass_patch(-13.5, 4.5, 18, 1.4)
+    draw_grass_patch(-14.5, -0.5, 20, 1.5)
+    
+    # Tambahkan pohon untuk tampilan realistik
+    # Pohon di pojok kiri belakang (dekat area serigala)
+    draw_tree(-14.5, -8.0, 3.2, 0.22, 1.0)
+    draw_pine_tree(-15.2, -5.5, 3.8, 0.9)
+    
+    # Pohon di pojok kiri depan
+    draw_tree(-12.5, 7.5, 3.5, 0.25, 1.1)
+    draw_tree(-14.0, 9.0, 3.0, 0.2, 0.95)
+    
+    # Pohon di pojok kanan belakang
+    draw_pine_tree(12.0, -8.5, 4.0, 1.0)
+    draw_tree(13.5, -6.5, 3.3, 0.23, 1.05)
+    
+    # Pohon di pojok kanan depan
+    draw_tree(11.5, 8.0, 3.4, 0.24, 1.08)
+    draw_pine_tree(13.0, 9.5, 3.6, 0.85)
+    
+    # Pohon tambahan di belakang barn untuk depth
+    draw_tree(8.0, -8.0, 2.8, 0.18, 0.9)
+    draw_tree(9.5, -7.5, 3.0, 0.2, 0.95)
 
 
 def draw_barn_slats(center_x, center_y, width, height, z_pos, count, color):
@@ -984,29 +1637,6 @@ def draw_barn():
     glPushMatrix()
     glTranslatef(0.76, 2.84, -0.32)
     draw_shed_roof(10.0, 2.02, 1.34, 4.95)
-    glPopMatrix()
-
-    # Front fascia that visually joins the decorative gable and the main roof.
-    glColor3f(*roof_edge)
-    glPushMatrix()
-    glTranslatef(0.76, 3.0, 2.28)
-    glScalef(10.05, 0.12, 0.16)
-    glutSolidCube(1.0)
-    glPopMatrix()
-    glPushMatrix()
-    glTranslatef(0.76, 3.0, -2.56)
-    glScalef(10.05, 0.12, 0.16)
-    glutSolidCube(1.0)
-    glPopMatrix()
-    glPushMatrix()
-    glTranslatef(-4.08, 3.0, -0.18)
-    glScalef(0.16, 0.12, 4.92)
-    glutSolidCube(1.0)
-    glPopMatrix()
-    glPushMatrix()
-    glTranslatef(5.72, 3.0, -0.18)
-    glScalef(0.16, 0.12, 4.92)
-    glutSolidCube(1.0)
     glPopMatrix()
 
     # Front fascia that visually joins the decorative gable and the main roof.
@@ -1208,109 +1838,191 @@ def draw_goat(config):
     
     scale_factor = config["scale"]
     
-    # Tentukan target berdasarkan waktu
-    if currentTime == 1:  # Jam makan (10:00) - Makan di hay bale
-        # Domba menuju hay bale
-        hay_idx = config["index"] % 3
-        target_x = HAY_BALE_POSITIONS[hay_idx]["x"]
-        target_z = HAY_BALE_POSITIONS[hay_idx]["z"]
-        # Posisi di sekitar hay bale
-        angle_offset = config["index"] * 120
-        target_x += np.cos(np.radians(angle_offset)) * 1.2
-        target_z += np.sin(np.radians(angle_offset)) * 1.2
-        
-        x_pos = target_x
-        z_pos = target_z
-        y_pos = 0.55  # Kepala menunduk makan
-        
-    elif currentTime >= 2:  # Malam (19:00) dan tengah malam (23:00)
-        # Domba masuk kandang dengan transisi smooth
-        spot = SHEEP_BARN_SPOTS[config["index"]]
-        
-        # Gunakan dayNightBlend untuk transisi smooth
-        shelter_progress = min(dayNightBlend / 0.75, 1.0)  # Lebih cepat masuk
-        
-        # Fase 1: Berjalan ke pintu (0.0 - 0.6)
-        walk_progress = min(shelter_progress / 0.6, 1.0)
-        door_x = lerp(roam_x, spot["door_x"], walk_progress)
-        door_z = lerp(roam_z, spot["door_z"], walk_progress)
-        
-        # Fase 2: Masuk ke dalam (0.6 - 1.0)
-        if shelter_progress > 0.6:
-            hide_progress = (shelter_progress - 0.6) / 0.4
-            x_pos = lerp(spot["door_x"], spot["inside_x"], hide_progress)
-            z_pos = lerp(spot["door_z"], spot["inside_z"], hide_progress)
-            scale_factor = config["scale"] * (1.0 - hide_progress)
-        else:
-            x_pos = door_x
-            z_pos = door_z
-            scale_factor = config["scale"]
-        
-        y_pos = 0.62
-        
-        # Jika sudah masuk sepenuhnya, jangan render
-        if shelter_progress >= 0.98:
-            return
+    # Posisi hay bale untuk jam makan
+    hay_idx = config["index"] % 3
+    hay_target_x = HAY_BALE_POSITIONS[hay_idx]["x"]
+    hay_target_z = HAY_BALE_POSITIONS[hay_idx]["z"]
+    angle_offset = config["index"] * 120
+    hay_target_x += np.cos(np.radians(angle_offset)) * 1.2
+    hay_target_z += np.sin(np.radians(angle_offset)) * 1.2
+    
+    # Posisi barn untuk malam
+    spot = SHEEP_BARN_SPOTS[config["index"]]
+    
+    # Deteksi transisi berdasarkan previousTime dan currentTime
+    is_transitioning = (previousTime != currentTime)
+    
+    # Default values
+    x_pos = roam_x
+    z_pos = roam_z
+    y_pos = 0.62 + body_bob
+    heading = roam_heading
+    
+    # ===== LOGIKA POSISI BERDASARKAN WAKTU DAN TRANSISI =====
+    
+    if currentTime == 0:  # Jam 07:00 - Pagi (Roaming)
+        if is_transitioning and previousTime >= 2:
+            # Transisi dari malam (19:00 atau 23:00) ke pagi - keluar dari barn
+            exit_progress = 1.0 - (dayNightBlend / TIME_CONFIGS[previousTime]["sky_blend"])
+            exit_progress = clamp(exit_progress, 0.0, 1.0)
             
-    else:  # Pagi (07:00) - Berkeliaran
-        x_pos = roam_x
-        z_pos = roam_z
-        y_pos = 0.62 + body_bob
+            if exit_progress < 0.4:
+                # Fase 1: Keluar dari dalam ke pintu
+                inside_to_door = exit_progress / 0.4
+                x_pos = lerp(spot["inside_x"], spot["door_x"], inside_to_door)
+                z_pos = lerp(spot["inside_z"], spot["door_z"], inside_to_door)
+                scale_factor = config["scale"] * max(inside_to_door, 0.1)
+            else:
+                # Fase 2: Dari pintu ke roaming
+                door_to_roam = (exit_progress - 0.4) / 0.6
+                x_pos = lerp(spot["door_x"], roam_x, door_to_roam)
+                z_pos = lerp(spot["door_z"], roam_z, door_to_roam)
+                scale_factor = config["scale"]
+            
+            y_pos = 0.62
+            # Heading ke arah keluar
+            path_dx = roam_x - spot["inside_x"]
+            path_dz = roam_z - spot["inside_z"]
+            heading = -np.degrees(np.arctan2(path_dz, path_dx))
+            
+        elif is_transitioning and previousTime == 1:
+            # Transisi dari jam makan (10:00) ke pagi - dari hay bale ke roaming
+            transition_progress = 1.0 - (abs(dayNightBlend - TIME_CONFIGS[0]["sky_blend"]) / abs(TIME_CONFIGS[1]["sky_blend"] - TIME_CONFIGS[0]["sky_blend"]))
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            x_pos = lerp(hay_target_x, roam_x, transition_progress)
+            z_pos = lerp(hay_target_z, roam_z, transition_progress)
+            y_pos = lerp(0.55, 0.62 + body_bob, transition_progress)
+            
+            # Heading ke arah roaming
+            path_dx = roam_x - hay_target_x
+            path_dz = roam_z - hay_target_z
+            heading = -np.degrees(np.arctan2(path_dz, path_dx))
+        else:
+            # Normal roaming
+            x_pos = roam_x
+            z_pos = roam_z
+            y_pos = 0.62 + body_bob
+            heading = roam_heading
     
-    # ===== TRANSISI SMOOTH DARI PAGI (07:00) KE JAM MAKAN (10:00) =====
-    # Gunakan dayNightBlend sebagai progress indicator
-    # Saat transisi dari time 0 ke time 1, dayNightBlend berubah dari 0.0 ke 0.15
-    if currentTime == 0 and dayNightBlend > 0.0:
-        # Sedang transisi ke jam makan
-        transition_progress = dayNightBlend / 0.15  # 0.0 to 1.0
-        
-        # Target hay bale
-        hay_idx = config["index"] % 3
-        target_x = HAY_BALE_POSITIONS[hay_idx]["x"]
-        target_z = HAY_BALE_POSITIONS[hay_idx]["z"]
-        angle_offset = config["index"] * 120
-        target_x += np.cos(np.radians(angle_offset)) * 1.2
-        target_z += np.sin(np.radians(angle_offset)) * 1.2
-        
-        # Interpolasi posisi
-        x_pos = lerp(roam_x, target_x, transition_progress)
-        z_pos = lerp(roam_z, target_z, transition_progress)
-        y_pos = lerp(0.62 + body_bob, 0.55, transition_progress)
-        
-    elif currentTime == 1 and dayNightBlend < 0.15:
-        # Baru masuk jam makan, masih dalam transisi
-        transition_progress = dayNightBlend / 0.15
-        
-        # Dari roaming ke hay bale
-        hay_idx = config["index"] % 3
-        target_x = HAY_BALE_POSITIONS[hay_idx]["x"]
-        target_z = HAY_BALE_POSITIONS[hay_idx]["z"]
-        angle_offset = config["index"] * 120
-        target_x += np.cos(np.radians(angle_offset)) * 1.2
-        target_z += np.sin(np.radians(angle_offset)) * 1.2
-        
-        # Interpolasi posisi
-        x_pos = lerp(roam_x, target_x, transition_progress)
-        z_pos = lerp(roam_z, target_z, transition_progress)
-        y_pos = lerp(0.62 + body_bob, 0.55, transition_progress)
+    elif currentTime == 1:  # Jam 10:00 - Jam Makan (Hay Bale)
+        if is_transitioning and previousTime == 0:
+            # Transisi dari pagi ke jam makan - roaming ke hay bale
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[0]["sky_blend"]) / abs(TIME_CONFIGS[1]["sky_blend"] - TIME_CONFIGS[0]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            x_pos = lerp(roam_x, hay_target_x, transition_progress)
+            z_pos = lerp(roam_z, hay_target_z, transition_progress)
+            y_pos = lerp(0.62 + body_bob, 0.55, transition_progress)
+            
+            # Heading ke hay bale
+            path_dx = hay_target_x - roam_x
+            path_dz = hay_target_z - roam_z
+            heading = -np.degrees(np.arctan2(path_dz, path_dx))
+            
+        elif is_transitioning and previousTime >= 2:
+            # Transisi dari malam (19:00 atau 23:00) ke jam makan - barn ke hay bale
+            transition_progress = 1.0 - (dayNightBlend / TIME_CONFIGS[previousTime]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            if transition_progress < 0.4:
+                # Fase 1: Keluar dari barn ke pintu
+                inside_to_door = transition_progress / 0.4
+                x_pos = lerp(spot["inside_x"], spot["door_x"], inside_to_door)
+                z_pos = lerp(spot["inside_z"], spot["door_z"], inside_to_door)
+                scale_factor = config["scale"] * max(inside_to_door, 0.1)
+            else:
+                # Fase 2: Dari pintu ke hay bale
+                door_to_hay = (transition_progress - 0.4) / 0.6
+                x_pos = lerp(spot["door_x"], hay_target_x, door_to_hay)
+                z_pos = lerp(spot["door_z"], hay_target_z, door_to_hay)
+                scale_factor = config["scale"]
+            
+            y_pos = lerp(0.62, 0.55, transition_progress)
+            
+            # Heading ke hay bale
+            path_dx = hay_target_x - spot["inside_x"]
+            path_dz = hay_target_z - spot["inside_z"]
+            heading = -np.degrees(np.arctan2(path_dz, path_dx))
+        else:
+            # Normal makan di hay bale
+            x_pos = hay_target_x
+            z_pos = hay_target_z
+            y_pos = 0.55
+            
+            # Heading ke hay bale center
+            path_dx = HAY_BALE_POSITIONS[hay_idx]["x"] - x_pos
+            path_dz = HAY_BALE_POSITIONS[hay_idx]["z"] - z_pos
+            heading = -np.degrees(np.arctan2(path_dz, path_dx))
     
-    # Hitung heading
-    if currentTime == 1:
-        # Saat makan, hadap ke hay bale
-        hay_idx = config["index"] % 3
-        hay_x = HAY_BALE_POSITIONS[hay_idx]["x"]
-        hay_z = HAY_BALE_POSITIONS[hay_idx]["z"]
-        path_dx = hay_x - x_pos
-        path_dz = hay_z - z_pos
-    else:
-        path_dx = x_pos - roam_x
-        path_dz = z_pos - roam_z
+    elif currentTime >= 2:  # Jam 19:00 atau 23:00 - Malam (Barn)
+        if is_transitioning and previousTime == 0:
+            # Transisi dari pagi ke malam - roaming ke barn
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[0]["sky_blend"]) / abs(TIME_CONFIGS[currentTime]["sky_blend"] - TIME_CONFIGS[0]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            if transition_progress < 0.6:
+                # Fase 1: Roaming ke pintu
+                walk_progress = transition_progress / 0.6
+                x_pos = lerp(roam_x, spot["door_x"], walk_progress)
+                z_pos = lerp(roam_z, spot["door_z"], walk_progress)
+                scale_factor = config["scale"]
+            else:
+                # Fase 2: Pintu ke dalam barn
+                hide_progress = (transition_progress - 0.6) / 0.4
+                x_pos = lerp(spot["door_x"], spot["inside_x"], hide_progress)
+                z_pos = lerp(spot["door_z"], spot["inside_z"], hide_progress)
+                scale_factor = config["scale"] * (1.0 - hide_progress)
+            
+            y_pos = 0.62
+            
+            # Heading ke barn
+            path_dx = spot["inside_x"] - roam_x
+            path_dz = spot["inside_z"] - roam_z
+            heading = -np.degrees(np.arctan2(path_dz, path_dx))
+            
+            # Jika sudah masuk sepenuhnya, jangan render
+            if transition_progress >= 0.98:
+                return
+                
+        elif is_transitioning and previousTime == 1:
+            # Transisi dari jam makan ke malam - hay bale ke barn
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[1]["sky_blend"]) / abs(TIME_CONFIGS[currentTime]["sky_blend"] - TIME_CONFIGS[1]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            if transition_progress < 0.6:
+                # Fase 1: Hay bale ke pintu
+                walk_progress = transition_progress / 0.6
+                x_pos = lerp(hay_target_x, spot["door_x"], walk_progress)
+                z_pos = lerp(hay_target_z, spot["door_z"], walk_progress)
+                scale_factor = config["scale"]
+            else:
+                # Fase 2: Pintu ke dalam barn
+                hide_progress = (transition_progress - 0.6) / 0.4
+                x_pos = lerp(spot["door_x"], spot["inside_x"], hide_progress)
+                z_pos = lerp(spot["door_z"], spot["inside_z"], hide_progress)
+                scale_factor = config["scale"] * (1.0 - hide_progress)
+            
+            y_pos = lerp(0.55, 0.62, transition_progress)
+            
+            # Heading ke barn
+            path_dx = spot["inside_x"] - hay_target_x
+            path_dz = spot["inside_z"] - hay_target_z
+            heading = -np.degrees(np.arctan2(path_dz, path_dx))
+            
+            # Jika sudah masuk sepenuhnya, jangan render
+            if transition_progress >= 0.98:
+                return
+                
+        elif is_transitioning and ((previousTime == 2 and currentTime == 3) or (previousTime == 3 and currentTime == 2)):
+            # Transisi antara jam 19:00 dan 23:00 - tetap di barn (tidak perlu animasi)
+            # Domba sudah di dalam, tidak perlu render
+            return
+        else:
+            # Normal di dalam barn - tidak render
+            return
     
-    if abs(path_dx) + abs(path_dz) > 0.001:
-        heading = -np.degrees(np.arctan2(path_dz, path_dx))
-    else:
-        heading = roam_heading
-    
+    # Render domba
     glPushMatrix()
     glTranslatef(x_pos, y_pos, z_pos)
     glRotatef(heading, 0.0, 1.0, 0.0)
@@ -1368,6 +2080,9 @@ def draw_scene():
     # Tambahkan serigala di tengah malam
     draw_wolf()
     
+    # Tambahkan peternak
+    draw_farmer()
+    
     # Tampilkan UI overlay
     draw_time_display()
     draw_instructions_panel()
@@ -1388,7 +2103,8 @@ def display():
 
 
 def timer(value):
-    global angleBlade, goatWalkPhase, dayNightBlend, timeBlend, currentTime, wolfWalkPhase
+    global angleBlade, goatWalkPhase, dayNightBlend, timeBlend, currentTime, wolfWalkPhase, previousTime
+    global farmerWalkPhase, farmerArmSwing, riverFlowPhase
 
     angleBlade -= 3.0
     if angleBlade <= -360.0:
@@ -1402,6 +2118,10 @@ def timer(value):
             dayNightBlend = min(dayNightBlend + step, target_blend)
         else:
             dayNightBlend = max(dayNightBlend - step, target_blend)
+    else:
+        # Transisi selesai, reset previousTime
+        if previousTime != currentTime:
+            previousTime = currentTime
 
     # Domba hanya berkeliaran saat pagi (currentTime == 0)
     if currentTime == 0 and dayNightBlend <= 0.02:
@@ -1410,24 +2130,87 @@ def timer(value):
             goatWalkPhase -= np.pi * 2
     
     # Serigala jalan-jalan saat tengah malam (currentTime == 3)
+    # Lebih cepat dari domba (0.04 vs 0.025)
     if currentTime == 3:
-        wolfWalkPhase += 0.02
+        wolfWalkPhase += 0.04
         if wolfWalkPhase >= np.pi * 2:
             wolfWalkPhase -= np.pi * 2
+    
+    # Animasi peternak
+    if currentTime in [1, 2, 3]:
+        farmerWalkPhase += 0.03
+        if farmerWalkPhase >= np.pi * 2:
+            farmerWalkPhase -= np.pi * 2
+        
+        farmerArmSwing += 0.05
+        if farmerArmSwing >= np.pi * 2:
+            farmerArmSwing -= np.pi * 2
+    
+    # Animasi sungai (selalu mengalir)
+    riverFlowPhase += 0.08
+    if riverFlowPhase >= np.pi * 2:
+        riverFlowPhase -= np.pi * 2
 
     glutPostRedisplay()
     glutTimerFunc(16, timer, 0)
 
 
 def mouse(button, state, x, y):
-    global isDragging, lastMouseX, lastMouseY, viewMode, zoomDistance
+    global isDragging, lastMouseX, lastMouseY, viewMode, zoomDistance, currentTime, previousTime, transitionStartBlend
 
+    # Convert mouse coordinates (GLUT uses top-left origin)
+    window_height = 650
+    mouse_x = x
+    mouse_y = window_height - y  # Flip Y coordinate
+    
     if button == GLUT_LEFT_BUTTON:
         if state == GLUT_DOWN:
-            isDragging = True
-            lastMouseX = x
-            lastMouseY = y
-            viewMode = 5
+            # Check if clicking on buttons (for mobile touch support)
+            button_clicked = False
+            
+            # Button T (170-195)
+            if 20 <= mouse_x <= 45 and 170 <= mouse_y <= 195:
+                previousTime = currentTime
+                transitionStartBlend = dayNightBlend
+                currentTime = (currentTime + 1) % 4
+                button_clicked = True
+            
+            # Button 1 (135-160)
+            elif 20 <= mouse_x <= 45 and 135 <= mouse_y <= 160:
+                previousTime = currentTime
+                transitionStartBlend = dayNightBlend
+                currentTime = 0
+                button_clicked = True
+            
+            # Button 2 (100-125)
+            elif 20 <= mouse_x <= 45 and 100 <= mouse_y <= 125:
+                previousTime = currentTime
+                transitionStartBlend = dayNightBlend
+                currentTime = 1
+                button_clicked = True
+            
+            # Button 3 (65-90)
+            elif 20 <= mouse_x <= 45 and 65 <= mouse_y <= 90:
+                previousTime = currentTime
+                transitionStartBlend = dayNightBlend
+                currentTime = 2
+                button_clicked = True
+            
+            # Button 4 (30-55)
+            elif 20 <= mouse_x <= 45 and 30 <= mouse_y <= 55:
+                previousTime = currentTime
+                transitionStartBlend = dayNightBlend
+                currentTime = 3
+                button_clicked = True
+            
+            if not button_clicked:
+                # Normal camera drag
+                isDragging = True
+                lastMouseX = x
+                lastMouseY = y
+                viewMode = 5
+            
+            glutPostRedisplay()
         elif state == GLUT_UP:
             isDragging = False
     elif button == 3 and state == GLUT_DOWN:
@@ -1498,7 +2281,7 @@ def specialKeys(key, x, y):
 
 
 def keyboard(key, x, y):
-    global zoomDistance, dayNightTarget, currentTime
+    global zoomDistance, dayNightTarget, currentTime, previousTime, transitionStartBlend
 
     if key == b'+' or key == b'=':
         zoomDistance += 0.6
@@ -1510,14 +2293,24 @@ def keyboard(key, x, y):
             zoomDistance = -42.0
     elif key == b't' or key == b'T':
         # Toggle waktu: cycle through 0 -> 1 -> 2 -> 3 -> 0
+        previousTime = currentTime
+        transitionStartBlend = dayNightBlend
         currentTime = (currentTime + 1) % 4
     elif key == b'1':
+        previousTime = currentTime
+        transitionStartBlend = dayNightBlend
         currentTime = 0  # 07:00 Pagi
     elif key == b'2':
+        previousTime = currentTime
+        transitionStartBlend = dayNightBlend
         currentTime = 1  # 10:00 Jam Makan
     elif key == b'3':
+        previousTime = currentTime
+        transitionStartBlend = dayNightBlend
         currentTime = 2  # 19:00 Malam
     elif key == b'4':
+        previousTime = currentTime
+        transitionStartBlend = dayNightBlend
         currentTime = 3  # 23:00 Tengah Malam
     glutPostRedisplay()
 
