@@ -35,6 +35,9 @@ farmerArmSwing = 0.0
 # Animasi sungai
 riverFlowPhase = 0.0
 
+# Animasi awan
+cloudPhase = 0.0
+
 GOAT_CONFIGS = [
     {"index": 0, "base_x": -5.8, "base_z": 3.2, "scale": 0.8, "radius_x": 0.8, "radius_z": 0.5, "phase": 0.0},
     {"index": 1, "base_x": -1.8, "base_z": 4.8, "scale": 0.75, "radius_x": 0.6, "radius_z": 0.45, "phase": 1.8},
@@ -1694,136 +1697,55 @@ def draw_barn():
 
 
 def draw_goat_body():
-    # Warna domba seperti di gambar
-    wool = (1.0, 1.0, 1.0)  # Putih bersih untuk badan
-    face = (0.05, 0.05, 0.05)  # Hitam untuk wajah dan kaki
-    eye_white = (1.0, 1.0, 1.0)
-    horn_color = (0.3, 0.3, 0.3)  # Abu-abu gelap untuk tanduk
+    # Warna domba sederhana
+    wool = (0.95, 0.95, 0.95)  # Putih untuk badan
+    face = (0.2, 0.2, 0.2)  # Abu-abu gelap untuk wajah dan kaki
 
-    # Body utama (badan bulat seperti bola wol)
+    # Body utama (badan oval)
     glColor3f(*wool)
     glPushMatrix()
-    glTranslatef(0.0, 0.1, 0.0)
-    glScalef(1.4, 1.2, 1.0)
-    glutSolidSphere(0.5, 24, 24)
-    glPopMatrix()
-
-    # Bagian belakang (pantat) lebih bulat
-    glPushMatrix()
-    glTranslatef(-0.55, 0.08, 0.0)
-    glScalef(0.55, 0.5, 0.5)
+    glScalef(1.0, 0.8, 0.7)
     glutSolidSphere(0.5, 16, 16)
     glPopMatrix()
 
-    # Leher (putih)
-    glPushMatrix()
-    glTranslatef(0.45, 0.12, 0.0)
-    glScalef(0.35, 0.45, 0.35)
-    glutSolidSphere(0.5, 16, 16)
-    glPopMatrix()
-
-    # Head (kepala hitam seperti di gambar)
+    # Head (kepala abu-abu)
     glColor3f(*face)
     glPushMatrix()
-    glTranslatef(0.7, 0.12, 0.0)
-    glScalef(0.75, 0.85, 0.7)
-    glutSolidSphere(0.35, 20, 20)
-    glPopMatrix()
-
-    # Snout (moncong hitam)
-    glPushMatrix()
-    glTranslatef(0.92, 0.05, 0.0)
-    glScalef(0.45, 0.35, 0.35)
+    glTranslatef(0.5, 0.1, 0.0)
     glutSolidSphere(0.25, 16, 16)
     glPopMatrix()
 
-    # Ears (telinga hitam, lebih kecil dan tegak)
-    for ear_z in (-0.28, 0.28):
+    # Ears (telinga)
+    for ear_z in (-0.15, 0.15):
         glPushMatrix()
-        glTranslatef(0.62, 0.32, ear_z)
-        glRotatef(20 if ear_z > 0 else -20, 0, 0, 1)
-        glRotatef(15 if ear_z > 0 else -15, 1, 0, 0)
-        glScalef(0.12, 0.28, 0.08)
+        glTranslatef(0.5, 0.25, ear_z)
+        glScalef(0.1, 0.2, 0.05)
         glutSolidSphere(0.5, 12, 12)
         glPopMatrix()
 
-    # Horns (tanduk melengkung seperti di gambar)
-    glColor3f(*horn_color)
-    for horn_z in (-0.18, 0.18):
-        # Bagian bawah tanduk
-        glPushMatrix()
-        glTranslatef(0.65, 0.38, horn_z)
-        glRotatef(35 if horn_z > 0 else -35, 0, 1, 0)
-        glRotatef(-15, 1, 0, 0)
-        glScalef(0.08, 0.22, 0.08)
-        glutSolidCube(1.0)
-        glPopMatrix()
-        
-        # Bagian atas tanduk (melengkung)
-        glPushMatrix()
-        glTranslatef(0.65 + (0.12 if horn_z > 0 else -0.12), 0.48, horn_z)
-        glRotatef(55 if horn_z > 0 else -55, 0, 1, 0)
-        glRotatef(-25, 1, 0, 0)
-        glScalef(0.07, 0.18, 0.07)
-        glutSolidCube(1.0)
-        glPopMatrix()
-
-    # Eyes (mata putih dengan pupil hitam)
-    for eye_z in (-0.18, 0.18):
-        # Bagian putih mata
-        glColor3f(*eye_white)
-        glPushMatrix()
-        glTranslatef(0.85, 0.18, eye_z)
-        glScalef(0.15, 0.12, 0.08)
-        glutSolidSphere(0.5, 12, 12)
-        glPopMatrix()
-
-        # Pupil hitam
-        glColor3f(0.0, 0.0, 0.0)
-        glPushMatrix()
-        glTranslatef(0.90, 0.17, eye_z)
-        glutSolidSphere(0.04, 10, 10)
-        glPopMatrix()
-
-    # Nose (hidung hitam)
+    # Eyes (mata hitam)
     glColor3f(0.0, 0.0, 0.0)
-    for nose_z in (-0.07, 0.07):
+    for eye_z in (-0.1, 0.1):
         glPushMatrix()
-        glTranslatef(1.02, 0.02, nose_z)
+        glTranslatef(0.65, 0.15, eye_z)
         glutSolidSphere(0.04, 8, 8)
         glPopMatrix()
 
-    # Legs (kaki hitam seperti di gambar)
+    # Legs (kaki abu-abu)
     glColor3f(*face)
-    leg_positions = [(-0.35, 0.22), (-0.05, -0.22), (0.3, 0.22), (0.55, -0.22)]
+    leg_positions = [(-0.2, 0.15), (-0.2, -0.15), (0.15, 0.15), (0.15, -0.15)]
     for leg_x, leg_z in leg_positions:
-        # Upper leg (paha)
         glPushMatrix()
-        glTranslatef(leg_x, -0.15, leg_z)
-        glScalef(0.16, 0.35, 0.16)
+        glTranslatef(leg_x, -0.4, leg_z)
+        glScalef(0.1, 0.4, 0.1)
         glutSolidCube(1.0)
-        glPopMatrix()
-
-        # Lower leg (betis)
-        glPushMatrix()
-        glTranslatef(leg_x, -0.42, leg_z)
-        glScalef(0.14, 0.32, 0.14)
-        glutSolidCube(1.0)
-        glPopMatrix()
-
-        # Hoof (kuku hitam)
-        glPushMatrix()
-        glTranslatef(leg_x, -0.56, leg_z)
-        glScalef(0.18, 0.1, 0.16)
-        glutSolidSphere(0.5, 12, 12)
         glPopMatrix()
 
     # Tail (ekor putih pendek)
     glColor3f(*wool)
     glPushMatrix()
-    glTranslatef(-0.75, 0.12, 0.0)
-    glRotatef(-25, 0, 0, 1)
-    glScalef(0.1, 0.2, 0.1)
+    glTranslatef(-0.5, 0.0, 0.0)
+    glScalef(0.08, 0.15, 0.08)
     glutSolidCube(1.0)
     glPopMatrix()
 
@@ -2079,6 +2001,82 @@ def draw_windmill():
     glPopMatrix()
 
 
+def draw_cloud(x, y, z, scale=1.0, density=5):
+    """Menggambar awan dengan beberapa sphere"""
+    glDisable(GL_LIGHTING)
+    
+    # Warna awan berdasarkan waktu (putih di siang, abu-abu gelap di malam)
+    cloud_brightness = 1.0 - (dayNightBlend * 0.6)
+    glColor4f(cloud_brightness, cloud_brightness, cloud_brightness, 0.85)
+    
+    glPushMatrix()
+    glTranslatef(x, y, z)
+    
+    # Awan terdiri dari beberapa sphere yang overlap
+    # Sphere tengah (paling besar)
+    glPushMatrix()
+    glTranslatef(0.0, 0.0, 0.0)
+    glutSolidSphere(0.8 * scale, 12, 12)
+    glPopMatrix()
+    
+    # Sphere kiri
+    glPushMatrix()
+    glTranslatef(-0.7 * scale, -0.1 * scale, 0.0)
+    glutSolidSphere(0.6 * scale, 12, 12)
+    glPopMatrix()
+    
+    # Sphere kanan
+    glPushMatrix()
+    glTranslatef(0.7 * scale, -0.1 * scale, 0.0)
+    glutSolidSphere(0.65 * scale, 12, 12)
+    glPopMatrix()
+    
+    # Sphere atas
+    glPushMatrix()
+    glTranslatef(0.0, 0.5 * scale, 0.0)
+    glutSolidSphere(0.55 * scale, 12, 12)
+    glPopMatrix()
+    
+    # Sphere kiri atas
+    glPushMatrix()
+    glTranslatef(-0.4 * scale, 0.3 * scale, 0.0)
+    glutSolidSphere(0.5 * scale, 12, 12)
+    glPopMatrix()
+    
+    # Sphere kanan atas
+    glPushMatrix()
+    glTranslatef(0.4 * scale, 0.3 * scale, 0.0)
+    glutSolidSphere(0.5 * scale, 12, 12)
+    glPopMatrix()
+    
+    glPopMatrix()
+    glEnable(GL_LIGHTING)
+
+
+def draw_clouds():
+    """Menggambar beberapa awan yang bergerak melintas"""
+    
+    # Konfigurasi awan dengan posisi dan kecepatan berbeda
+    clouds = [
+        {"y": 12.0, "z": -15.0, "scale": 1.5, "speed": 1.0, "offset": 0.0},
+        {"y": 14.0, "z": -18.0, "scale": 1.2, "speed": 0.7, "offset": 15.0},
+        {"y": 11.5, "z": -12.0, "scale": 1.8, "speed": 0.9, "offset": 30.0},
+        {"y": 13.5, "z": -20.0, "scale": 1.3, "speed": 0.8, "offset": 45.0},
+        {"y": 15.0, "z": -16.0, "scale": 1.4, "speed": 1.1, "offset": 60.0},
+    ]
+    
+    for cloud in clouds:
+        # Hitung posisi X berdasarkan cloudPhase
+        # Awan bergerak dari kiri ke kanan
+        x_range = 50.0  # Total jarak pergerakan
+        x_start = -25.0  # Posisi awal (kiri)
+        
+        # Posisi X dengan offset untuk setiap awan
+        x_pos = x_start + ((cloudPhase * cloud["speed"] + cloud["offset"]) % x_range)
+        
+        draw_cloud(x_pos, cloud["y"], cloud["z"], cloud["scale"])
+
+
 def draw_mountain_low_poly(x, z, base_width, height, style='peaked'):
     """Menggambar gunung low-poly dengan berbagai style"""
     
@@ -2279,8 +2277,8 @@ def draw_mountain_range():
 
 
 def draw_scene():
-    # Gambar gunung terlebih dahulu (paling belakang)
-    draw_mountain_range()
+    # Gambar awan yang bergerak (menggantikan gunung)
+    draw_clouds()
     
     draw_celestial_body()
     draw_farm_plot()
@@ -2317,7 +2315,7 @@ def display():
 
 def timer(value):
     global angleBlade, goatWalkPhase, dayNightBlend, timeBlend, currentTime, wolfWalkPhase, previousTime
-    global farmerWalkPhase, farmerArmSwing, riverFlowPhase
+    global farmerWalkPhase, farmerArmSwing, riverFlowPhase, cloudPhase
 
     angleBlade -= 3.0
     if angleBlade <= -360.0:
@@ -2363,6 +2361,11 @@ def timer(value):
     riverFlowPhase += 0.08
     if riverFlowPhase >= np.pi * 2:
         riverFlowPhase -= np.pi * 2
+    
+    # Animasi awan (selalu bergerak)
+    cloudPhase += 0.05
+    if cloudPhase >= 100.0:
+        cloudPhase = 0.0
 
     glutPostRedisplay()
     glutTimerFunc(16, timer, 0)
