@@ -1694,125 +1694,136 @@ def draw_barn():
 
 
 def draw_goat_body():
-    wool = (0.98, 0.97, 0.93)
-    face = (0.08, 0.08, 0.09)
-    eye_white = (0.96, 0.94, 0.98)
-    horn_color = (0.85, 0.82, 0.75)
+    # Warna domba seperti di gambar
+    wool = (1.0, 1.0, 1.0)  # Putih bersih untuk badan
+    face = (0.05, 0.05, 0.05)  # Hitam untuk wajah dan kaki
+    eye_white = (1.0, 1.0, 1.0)
+    horn_color = (0.3, 0.3, 0.3)  # Abu-abu gelap untuk tanduk
 
-    # Body utama (lebih bulat dan besar)
+    # Body utama (badan bulat seperti bola wol)
     glColor3f(*wool)
     glPushMatrix()
-    glTranslatef(0.0, 0.06, 0.0)
-    glScalef(1.6, 1.3, 1.1)
+    glTranslatef(0.0, 0.1, 0.0)
+    glScalef(1.4, 1.2, 1.0)
     glutSolidSphere(0.5, 24, 24)
     glPopMatrix()
 
     # Bagian belakang (pantat) lebih bulat
     glPushMatrix()
-    glTranslatef(-0.65, 0.04, 0.0)
-    glScalef(0.5, 0.45, 0.45)
+    glTranslatef(-0.55, 0.08, 0.0)
+    glScalef(0.55, 0.5, 0.5)
     glutSolidSphere(0.5, 16, 16)
     glPopMatrix()
 
-    # Leher
+    # Leher (putih)
     glPushMatrix()
-    glTranslatef(0.5, 0.08, 0.0)
-    glScalef(0.4, 0.5, 0.4)
+    glTranslatef(0.45, 0.12, 0.0)
+    glScalef(0.35, 0.45, 0.35)
     glutSolidSphere(0.5, 16, 16)
     glPopMatrix()
 
-    # Head (kepala lebih detail)
+    # Head (kepala hitam seperti di gambar)
     glColor3f(*face)
     glPushMatrix()
-    glTranslatef(0.75, 0.08, 0.0)
-    glScalef(0.9, 1.0, 0.8)
-    glutSolidSphere(0.34, 20, 20)
+    glTranslatef(0.7, 0.12, 0.0)
+    glScalef(0.75, 0.85, 0.7)
+    glutSolidSphere(0.35, 20, 20)
     glPopMatrix()
 
-    # Snout (moncong)
+    # Snout (moncong hitam)
     glPushMatrix()
-    glTranslatef(0.95, 0.0, 0.0)
-    glScalef(0.5, 0.4, 0.4)
+    glTranslatef(0.92, 0.05, 0.0)
+    glScalef(0.45, 0.35, 0.35)
     glutSolidSphere(0.25, 16, 16)
     glPopMatrix()
 
-    # Ears (telinga lebih besar)
-    for ear_z in (-0.35, 0.35):
+    # Ears (telinga hitam, lebih kecil dan tegak)
+    for ear_z in (-0.28, 0.28):
         glPushMatrix()
-        glTranslatef(0.65, 0.25, ear_z)
-        glRotatef(30 if ear_z > 0 else -30, 1, 0, 0)
-        glScalef(0.18, 0.35, 0.08)
+        glTranslatef(0.62, 0.32, ear_z)
+        glRotatef(20 if ear_z > 0 else -20, 0, 0, 1)
+        glRotatef(15 if ear_z > 0 else -15, 1, 0, 0)
+        glScalef(0.12, 0.28, 0.08)
         glutSolidSphere(0.5, 12, 12)
         glPopMatrix()
 
-    # Horns (tanduk kecil)
+    # Horns (tanduk melengkung seperti di gambar)
     glColor3f(*horn_color)
-    for horn_z in (-0.15, 0.15):
+    for horn_z in (-0.18, 0.18):
+        # Bagian bawah tanduk
         glPushMatrix()
-        glTranslatef(0.7, 0.35, horn_z)
-        glRotatef(25 if horn_z > 0 else -25, 0, 1, 0)
-        glRotatef(-20, 1, 0, 0)
-        glScalef(0.08, 0.25, 0.08)
+        glTranslatef(0.65, 0.38, horn_z)
+        glRotatef(35 if horn_z > 0 else -35, 0, 1, 0)
+        glRotatef(-15, 1, 0, 0)
+        glScalef(0.08, 0.22, 0.08)
+        glutSolidCube(1.0)
+        glPopMatrix()
+        
+        # Bagian atas tanduk (melengkung)
+        glPushMatrix()
+        glTranslatef(0.65 + (0.12 if horn_z > 0 else -0.12), 0.48, horn_z)
+        glRotatef(55 if horn_z > 0 else -55, 0, 1, 0)
+        glRotatef(-25, 1, 0, 0)
+        glScalef(0.07, 0.18, 0.07)
         glutSolidCube(1.0)
         glPopMatrix()
 
-    # Eyes (mata lebih besar)
-    for eye_z in (-0.15, 0.15):
+    # Eyes (mata putih dengan pupil hitam)
+    for eye_z in (-0.18, 0.18):
+        # Bagian putih mata
         glColor3f(*eye_white)
         glPushMatrix()
-        glTranslatef(0.88, 0.15, eye_z)
-        glScalef(0.18, 0.14, 0.08)
+        glTranslatef(0.85, 0.18, eye_z)
+        glScalef(0.15, 0.12, 0.08)
         glutSolidSphere(0.5, 12, 12)
         glPopMatrix()
 
-        # Pupil
-        glColor3f(*face)
+        # Pupil hitam
+        glColor3f(0.0, 0.0, 0.0)
         glPushMatrix()
-        glTranslatef(0.93, 0.14, eye_z)
-        glutSolidSphere(0.035, 10, 10)
+        glTranslatef(0.90, 0.17, eye_z)
+        glutSolidSphere(0.04, 10, 10)
         glPopMatrix()
 
-    # Nose (hidung)
-    glColor3f(0.12, 0.12, 0.12)
-    for nose_z in (-0.08, 0.08):
+    # Nose (hidung hitam)
+    glColor3f(0.0, 0.0, 0.0)
+    for nose_z in (-0.07, 0.07):
         glPushMatrix()
-        glTranslatef(1.05, -0.02, nose_z)
+        glTranslatef(1.02, 0.02, nose_z)
         glutSolidSphere(0.04, 8, 8)
         glPopMatrix()
 
-    # Legs (kaki lebih proporsional)
+    # Legs (kaki hitam seperti di gambar)
     glColor3f(*face)
-    leg_positions = [(-0.4, 0.25), (-0.1, -0.25), (0.35, 0.25), (0.6, -0.25)]
+    leg_positions = [(-0.35, 0.22), (-0.05, -0.22), (0.3, 0.22), (0.55, -0.22)]
     for leg_x, leg_z in leg_positions:
-        # Upper leg
+        # Upper leg (paha)
         glPushMatrix()
-        glTranslatef(leg_x, -0.2, leg_z)
-        glScalef(0.18, 0.4, 0.18)
+        glTranslatef(leg_x, -0.15, leg_z)
+        glScalef(0.16, 0.35, 0.16)
         glutSolidCube(1.0)
         glPopMatrix()
 
-        # Lower leg
+        # Lower leg (betis)
         glPushMatrix()
-        glTranslatef(leg_x, -0.45, leg_z)
-        glScalef(0.15, 0.3, 0.15)
+        glTranslatef(leg_x, -0.42, leg_z)
+        glScalef(0.14, 0.32, 0.14)
         glutSolidCube(1.0)
         glPopMatrix()
 
-        # Hoof (kuku)
-        glColor3f(0.05, 0.05, 0.05)
+        # Hoof (kuku hitam)
         glPushMatrix()
-        glTranslatef(leg_x, -0.58, leg_z)
-        glScalef(0.2, 0.12, 0.18)
+        glTranslatef(leg_x, -0.56, leg_z)
+        glScalef(0.18, 0.1, 0.16)
         glutSolidSphere(0.5, 12, 12)
         glPopMatrix()
-        glColor3f(*face)
 
-    # Tail (ekor)
+    # Tail (ekor putih pendek)
     glColor3f(*wool)
     glPushMatrix()
-    glTranslatef(-0.85, 0.08, 0.0)
-    glRotatef(-30, 0, 0, 1)
-    glScalef(0.12, 0.25, 0.12)
+    glTranslatef(-0.75, 0.12, 0.0)
+    glRotatef(-25, 0, 0, 1)
+    glScalef(0.1, 0.2, 0.1)
     glutSolidCube(1.0)
     glPopMatrix()
 
@@ -2068,7 +2079,209 @@ def draw_windmill():
     glPopMatrix()
 
 
+def draw_mountain_low_poly(x, z, base_width, height, style='peaked'):
+    """Menggambar gunung low-poly dengan berbagai style"""
+    
+    # Warna gunung (coklat/abu-abu dengan variasi)
+    rock_dark = (0.45, 0.38, 0.32)
+    rock_mid = (0.52, 0.45, 0.38)
+    rock_light = (0.58, 0.52, 0.45)
+    snow_color = (0.95, 0.95, 0.98)
+    grass_color = (0.55, 0.65, 0.35)
+    
+    glPushMatrix()
+    glTranslatef(x, 0.0, z)
+    
+    if style == 'peaked':
+        # Gunung runcing dengan puncak salju
+        # Base layer (gelap)
+        glColor3f(*rock_dark)
+        glBegin(GL_TRIANGLES)
+        glNormal3f(0.0, 0.5, 0.8)
+        glVertex3f(0.0, height, 0.0)  # Puncak
+        glVertex3f(-base_width/2, 0.0, base_width/3)
+        glVertex3f(base_width/2, 0.0, base_width/3)
+        glEnd()
+        
+        # Side kiri
+        glColor3f(*rock_mid)
+        glBegin(GL_TRIANGLES)
+        glNormal3f(-0.8, 0.5, 0.0)
+        glVertex3f(0.0, height, 0.0)
+        glVertex3f(-base_width/2, 0.0, -base_width/3)
+        glVertex3f(-base_width/2, 0.0, base_width/3)
+        glEnd()
+        
+        # Side kanan
+        glColor3f(*rock_light)
+        glBegin(GL_TRIANGLES)
+        glNormal3f(0.8, 0.5, 0.0)
+        glVertex3f(0.0, height, 0.0)
+        glVertex3f(base_width/2, 0.0, base_width/3)
+        glVertex3f(base_width/2, 0.0, -base_width/3)
+        glEnd()
+        
+        # Back
+        glColor3f(*rock_dark)
+        glBegin(GL_TRIANGLES)
+        glNormal3f(0.0, 0.5, -0.8)
+        glVertex3f(0.0, height, 0.0)
+        glVertex3f(base_width/2, 0.0, -base_width/3)
+        glVertex3f(-base_width/2, 0.0, -base_width/3)
+        glEnd()
+        
+        # Snow cap (puncak salju)
+        snow_height = height * 0.3
+        glColor3f(*snow_color)
+        glBegin(GL_TRIANGLES)
+        # Front snow
+        glVertex3f(0.0, height, 0.0)
+        glVertex3f(-base_width/6, height - snow_height, base_width/9)
+        glVertex3f(base_width/6, height - snow_height, base_width/9)
+        glEnd()
+        
+        glBegin(GL_TRIANGLES)
+        # Left snow
+        glVertex3f(0.0, height, 0.0)
+        glVertex3f(-base_width/6, height - snow_height, -base_width/9)
+        glVertex3f(-base_width/6, height - snow_height, base_width/9)
+        glEnd()
+        
+        glBegin(GL_TRIANGLES)
+        # Right snow
+        glVertex3f(0.0, height, 0.0)
+        glVertex3f(base_width/6, height - snow_height, base_width/9)
+        glVertex3f(base_width/6, height - snow_height, -base_width/9)
+        glEnd()
+        
+        glBegin(GL_TRIANGLES)
+        # Back snow
+        glVertex3f(0.0, height, 0.0)
+        glVertex3f(base_width/6, height - snow_height, -base_width/9)
+        glVertex3f(-base_width/6, height - snow_height, -base_width/9)
+        glEnd()
+        
+    elif style == 'plateau':
+        # Gunung dengan puncak datar (plateau)
+        plateau_height = height * 0.85
+        plateau_width = base_width * 0.4
+        
+        # Lower slopes
+        glColor3f(*rock_dark)
+        glBegin(GL_QUADS)
+        # Front face
+        glNormal3f(0.0, 0.5, 0.8)
+        glVertex3f(-plateau_width/2, plateau_height, plateau_width/4)
+        glVertex3f(plateau_width/2, plateau_height, plateau_width/4)
+        glVertex3f(base_width/2, 0.0, base_width/3)
+        glVertex3f(-base_width/2, 0.0, base_width/3)
+        glEnd()
+        
+        # Plateau top with grass
+        glColor3f(*grass_color)
+        glBegin(GL_QUADS)
+        glNormal3f(0.0, 1.0, 0.0)
+        glVertex3f(-plateau_width/2, plateau_height, -plateau_width/4)
+        glVertex3f(plateau_width/2, plateau_height, -plateau_width/4)
+        glVertex3f(plateau_width/2, plateau_height, plateau_width/4)
+        glVertex3f(-plateau_width/2, plateau_height, plateau_width/4)
+        glEnd()
+        
+        # Side faces
+        glColor3f(*rock_mid)
+        glBegin(GL_QUADS)
+        glNormal3f(-0.8, 0.5, 0.0)
+        glVertex3f(-plateau_width/2, plateau_height, -plateau_width/4)
+        glVertex3f(-plateau_width/2, plateau_height, plateau_width/4)
+        glVertex3f(-base_width/2, 0.0, base_width/3)
+        glVertex3f(-base_width/2, 0.0, -base_width/3)
+        glEnd()
+        
+        glColor3f(*rock_light)
+        glBegin(GL_QUADS)
+        glNormal3f(0.8, 0.5, 0.0)
+        glVertex3f(plateau_width/2, plateau_height, plateau_width/4)
+        glVertex3f(plateau_width/2, plateau_height, -plateau_width/4)
+        glVertex3f(base_width/2, 0.0, -base_width/3)
+        glVertex3f(base_width/2, 0.0, base_width/3)
+        glEnd()
+        
+    elif style == 'ridge':
+        # Gunung dengan ridge (punggung)
+        ridge_height = height * 0.9
+        
+        # Multi-faceted ridge
+        segments = 5
+        for i in range(segments):
+            angle = (i / segments) * 180 - 90
+            next_angle = ((i + 1) / segments) * 180 - 90
+            
+            x1 = np.cos(np.radians(angle)) * base_width/2
+            z1 = np.sin(np.radians(angle)) * base_width/3
+            x2 = np.cos(np.radians(next_angle)) * base_width/2
+            z2 = np.sin(np.radians(next_angle)) * base_width/3
+            
+            # Alternate colors for facets
+            if i % 2 == 0:
+                glColor3f(*rock_dark)
+            else:
+                glColor3f(*rock_mid)
+            
+            glBegin(GL_TRIANGLES)
+            glVertex3f(0.0, ridge_height, 0.0)
+            glVertex3f(x1, 0.0, z1)
+            glVertex3f(x2, 0.0, z2)
+            glEnd()
+    
+    glPopMatrix()
+
+
+def draw_mountain_range():
+    """Menggambar rangkaian gunung di background"""
+    
+    # Layer paling belakang (paling jauh) - lebih gelap dan lebih tinggi
+    far_mountains = [
+        {"x": -25, "z": -35, "width": 12, "height": 14, "style": "peaked"},
+        {"x": -10, "z": -38, "width": 15, "height": 16, "style": "peaked"},
+        {"x": 8, "z": -36, "width": 13, "height": 15, "style": "peaked"},
+        {"x": 25, "z": -34, "width": 11, "height": 13, "style": "peaked"},
+    ]
+    
+    # Layer tengah - medium distance
+    mid_mountains = [
+        {"x": -30, "z": -28, "width": 10, "height": 11, "style": "ridge"},
+        {"x": -15, "z": -30, "width": 11, "height": 12, "style": "plateau"},
+        {"x": 0, "z": -32, "width": 14, "height": 13, "style": "peaked"},
+        {"x": 18, "z": -29, "width": 10, "height": 11, "style": "ridge"},
+        {"x": 32, "z": -27, "width": 9, "height": 10, "style": "plateau"},
+    ]
+    
+    # Layer depan (lebih dekat) - lebih detail
+    near_mountains = [
+        {"x": -22, "z": -22, "width": 8, "height": 9, "style": "plateau"},
+        {"x": -8, "z": -24, "width": 9, "height": 10, "style": "peaked"},
+        {"x": 12, "z": -23, "width": 8, "height": 9, "style": "ridge"},
+        {"x": 28, "z": -21, "width": 7, "height": 8, "style": "plateau"},
+    ]
+    
+    # Gambar dari belakang ke depan untuk depth
+    for mountain in far_mountains:
+        draw_mountain_low_poly(mountain["x"], mountain["z"], mountain["width"], 
+                              mountain["height"], mountain["style"])
+    
+    for mountain in mid_mountains:
+        draw_mountain_low_poly(mountain["x"], mountain["z"], mountain["width"], 
+                              mountain["height"], mountain["style"])
+    
+    for mountain in near_mountains:
+        draw_mountain_low_poly(mountain["x"], mountain["z"], mountain["width"], 
+                              mountain["height"], mountain["style"])
+
+
 def draw_scene():
+    # Gambar gunung terlebih dahulu (paling belakang)
+    draw_mountain_range()
+    
     draw_celestial_body()
     draw_farm_plot()
     draw_windmill()
