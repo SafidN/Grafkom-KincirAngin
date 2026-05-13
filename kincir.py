@@ -18,7 +18,7 @@ isDragging = False
 lastMouseX = 0
 lastMouseY = 0
 
-# Sistem waktu baru (0=07:00, 1=10:00, 2=19:00, 3=23:00)
+# Sistem waktu baru (0=06:00, 1=08:00, 2=16:00, 3=19:00, 4=23:00)
 currentTime = 0
 targetTime = 0
 timeBlend = 0.0
@@ -44,6 +44,13 @@ GOAT_CONFIGS = [
     {"index": 2, "base_x": 2.8, "base_z": 2.7, "scale": 0.82, "radius_x": 0.7, "radius_z": 0.55, "phase": 3.1},
 ]
 
+# Area grazing untuk jam 08:00 - domba menggerombol di area dengan banyak rumput
+GRAZING_AREA_POSITIONS = [
+    {"x": -6.5, "z": 5.0, "radius": 0.6},  # Domba 1 - kiri atas
+    {"x": -4.0, "z": 5.5, "radius": 0.5},  # Domba 2 - tengah atas
+    {"x": -5.2, "z": 3.8, "radius": 0.55}, # Domba 3 - tengah
+]
+
 SHEEP_BARN_SPOTS = [
     {"door_x": 2.55, "door_z": 1.5, "inside_x": 3.1, "inside_z": 0.45},
     {"door_x": 3.1, "door_z": 1.0, "inside_x": 3.45, "inside_z": 0.0},
@@ -53,12 +60,13 @@ SHEEP_BARN_SPOTS = [
 DAY_SKY_COLOR = (0.48, 0.75, 1.0, 1.0)
 NIGHT_SKY_COLOR = (0.05, 0.08, 0.18, 1.0)
 
-# Konfigurasi waktu untuk 4 periode
+# Konfigurasi waktu untuk 5 periode
 TIME_CONFIGS = {
-    0: {"hour": 7, "minute": 0, "name": "Pagi", "sky_blend": 0.0},      # 07:00 Pagi
-    1: {"hour": 10, "minute": 0, "name": "Siang", "sky_blend": 0.15},   # 10:00 Jam Makan
-    2: {"hour": 19, "minute": 0, "name": "Sore", "sky_blend": 0.75},    # 19:00 Malam
-    3: {"hour": 23, "minute": 0, "name": "Malam", "sky_blend": 1.0},    # 23:00 Tengah Malam
+    0: {"hour": 6, "minute": 0, "name": "Pagi", "sky_blend": 0.0},       # 06:00 Pagi - Domba keluar dari barn
+    1: {"hour": 8, "minute": 0, "name": "Pagi", "sky_blend": 0.1},       # 08:00 Pagi - Domba makan rumput, peternak datang
+    2: {"hour": 16, "minute": 0, "name": "Sore", "sky_blend": 0.5},      # 16:00 Sore - Domba makan hay bale
+    3: {"hour": 19, "minute": 0, "name": "Malam", "sky_blend": 0.75},    # 19:00 Malam - Domba masuk barn
+    4: {"hour": 23, "minute": 0, "name": "Tengah Malam", "sky_blend": 1.0},  # 23:00 Tengah Malam
 }
 
 # Posisi hay bale untuk feeding time
@@ -263,9 +271,9 @@ def draw_instructions_panel():
     glColor4f(0.1, 0.1, 0.1, 0.75)
     glBegin(GL_QUADS)
     glVertex2f(10, 10)
-    glVertex2f(280, 10)
-    glVertex2f(280, 200)
-    glVertex2f(10, 200)
+    glVertex2f(320, 10)
+    glVertex2f(320, 230)
+    glVertex2f(10, 230)
     glEnd()
     
     # Border
@@ -273,16 +281,19 @@ def draw_instructions_panel():
     glLineWidth(2.0)
     glBegin(GL_LINE_LOOP)
     glVertex2f(10, 10)
-    glVertex2f(280, 10)
-    glVertex2f(280, 200)
-    glVertex2f(10, 200)
+    glVertex2f(320, 10)
+    glVertex2f(320, 230)
+    glVertex2f(10, 230)
     glEnd()
     
     # Tombol-tombol dengan simbol
     buttons = [
-        {"key": "T", "label": "T : untuk toggle waktu.", "y": 170, "icon": "T"},
-        {"key": "1", "label": "1: untuk pagi (07:00)", "y": 135, "icon": "1"},
-        {"key": "2", "label": "2: untuk siang (10:00)", "y": 100, "icon": "2"},
+        {"key": "T", "label": "T : untuk toggle waktu.", "y": 195, "icon": "T"},
+        {"key": "1", "label": "1: pagi (06:00) - domba keluar", "y": 160, "icon": "1"},
+        {"key": "2", "label": "2: pagi (08:00) - makan rumput", "y": 125, "icon": "2"},
+        {"key": "3", "label": "3: sore (16:00) - makan hay bale", "y": 90, "icon": "3"},
+        {"key": "4", "label": "4: malam (19:00) - masuk barn", "y": 55, "icon": "4"},
+        {"key": "5", "label": "5: tengah malam (23:00)", "y": 20, "icon": "5"},
     ]
     
     for btn in buttons:
@@ -324,48 +335,6 @@ def draw_instructions_panel():
         glColor3f(1.0, 1.0, 1.0)
         glLineWidth(1.5)
         draw_text_stroke(btn_x + btn_size + 10, btn_y + 5, btn["label"], 0.08)
-    
-    # Tambahan info untuk jam 3 dan 4
-    extra_info = [
-        {"label": "3: untuk malam (19:00)", "y": 65},
-        {"label": "4: untuk tengah malam (23:00)", "y": 30},
-    ]
-    
-    for info in extra_info:
-        # Tombol kecil
-        btn_x = 20
-        btn_y = info["y"]
-        btn_size = 25
-        btn_num = "3" if info["y"] == 65 else "4"
-        
-        if btn_num == str(currentTime + 1):
-            glColor4f(0.3, 0.5, 0.7, 0.8)
-        else:
-            glColor4f(0.2, 0.2, 0.2, 0.8)
-        
-        glBegin(GL_QUADS)
-        glVertex2f(btn_x, btn_y)
-        glVertex2f(btn_x + btn_size, btn_y)
-        glVertex2f(btn_x + btn_size, btn_y + btn_size)
-        glVertex2f(btn_x, btn_y + btn_size)
-        glEnd()
-        
-        glColor3f(0.9, 0.9, 0.9)
-        glLineWidth(1.5)
-        glBegin(GL_LINE_LOOP)
-        glVertex2f(btn_x, btn_y)
-        glVertex2f(btn_x + btn_size, btn_y)
-        glVertex2f(btn_x + btn_size, btn_y + btn_size)
-        glVertex2f(btn_x, btn_y + btn_size)
-        glEnd()
-        
-        glColor3f(1.0, 1.0, 1.0)
-        glLineWidth(2.0)
-        draw_text_stroke(btn_x + 5, btn_y + 5, btn_num, 0.12)
-        
-        glColor3f(1.0, 1.0, 1.0)
-        glLineWidth(1.5)
-        draw_text_stroke(btn_x + btn_size + 10, btn_y + 5, info["label"], 0.08)
     
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_LIGHTING)
@@ -559,14 +528,16 @@ def draw_farmer():
     
     gate_x = 2.85  # Posisi gerbang
     gate_z = 8.5
-    center_x = 0.0  # Posisi tengah (jam 10)
+    center_x = 0.0  # Posisi tengah (jam 08:00)
     center_z = 3.0
-    door_x = 2.2  # Posisi depan pintu barn (jam 19)
+    hay_x = -7.0  # Posisi dekat hay bale (jam 16:00)
+    hay_z = -6.0
+    door_x = 2.2  # Posisi depan pintu barn (jam 19:00)
     door_z = 1.8
     
     is_transitioning = (previousTime != currentTime)
     
-    # ===== JAM 7 (PAGI) - TIDAK ADA PETERNAK =====
+    # ===== JAM 06:00 (PAGI) - TIDAK ADA PETERNAK =====
     if currentTime == 0:
         if is_transitioning and previousTime == 1:
             # Transisi dari jam 10 ke jam 7 - peternak keluar
@@ -599,10 +570,10 @@ def draw_farmer():
             # Tidak ada peternak di jam 7
             return
     
-    # ===== JAM 10 (JAM MAKAN) - PETERNAK DI TENGAH =====
+    # ===== JAM 08:00 (PAGI) - PETERNAK DI TENGAH =====
     elif currentTime == 1:
         if is_transitioning and previousTime == 0:
-            # Transisi dari jam 7 ke jam 10 - peternak masuk
+            # Transisi dari jam 06:00 ke jam 08:00 - peternak masuk
             transition_progress = abs(dayNightBlend - TIME_CONFIGS[0]["sky_blend"]) / abs(TIME_CONFIGS[1]["sky_blend"] - TIME_CONFIGS[0]["sky_blend"])
             transition_progress = clamp(transition_progress, 0.0, 1.0)
             
@@ -651,47 +622,54 @@ def draw_farmer():
             farmer_heading = 180.0
             farmer_action = 'herding'
     
-    # ===== JAM 19 (MALAM) - PETERNAK DI PINTU BARN =====
+    # ===== JAM 16:00 (SORE) - PETERNAK DI DEKAT HAY BALE =====
     elif currentTime == 2:
-        if is_transitioning and previousTime == 0:
-            # Transisi dari jam 7 ke jam 19 - peternak masuk ke pintu
-            transition_progress = abs(dayNightBlend - TIME_CONFIGS[0]["sky_blend"]) / abs(TIME_CONFIGS[2]["sky_blend"] - TIME_CONFIGS[0]["sky_blend"])
-            transition_progress = clamp(transition_progress, 0.0, 1.0)
-            
-            if transition_progress < 0.3:
-                farmer_alpha = transition_progress / 0.3
-            else:
-                farmer_alpha = 1.0
-            
-            # Jalan dari gerbang ke pintu
-            if transition_progress < 0.5:
-                # Fase 1: Gerbang ke tengah
-                phase1 = transition_progress / 0.5
-                farmer_x = lerp(gate_x, center_x, phase1)
-                farmer_z = lerp(gate_z, center_z, phase1)
-            else:
-                # Fase 2: Tengah ke pintu
-                phase2 = (transition_progress - 0.5) / 0.5
-                farmer_x = lerp(center_x, door_x, phase2)
-                farmer_z = lerp(center_z, door_z, phase2)
-            
-            farmer_heading = 90.0
-            farmer_action = 'entering'
-        
-        elif is_transitioning and previousTime == 1:
-            # Transisi dari jam 10 ke jam 19 - peternak jalan dari tengah ke pintu
+        if is_transitioning and previousTime == 1:
+            # Transisi dari jam 08:00 ke jam 16:00 - peternak jalan dari tengah ke hay
             transition_progress = abs(dayNightBlend - TIME_CONFIGS[1]["sky_blend"]) / abs(TIME_CONFIGS[2]["sky_blend"] - TIME_CONFIGS[1]["sky_blend"])
             transition_progress = clamp(transition_progress, 0.0, 1.0)
             
             farmer_alpha = 1.0
-            farmer_x = lerp(center_x, door_x, transition_progress)
-            farmer_z = lerp(center_z, door_z, transition_progress)
-            farmer_heading = 90.0
+            farmer_x = lerp(center_x, hay_x, transition_progress)
+            farmer_z = lerp(center_z, hay_z, transition_progress)
+            farmer_heading = 225.0  # Menghadap hay bale
             farmer_action = 'entering'
         
         elif is_transitioning and previousTime == 3:
-            # Transisi dari jam 23 ke jam 19 - peternak masuk dari gerbang ke pintu
+            # Transisi dari jam 19:00 ke jam 16:00 - peternak jalan dari pintu ke hay
             transition_progress = abs(dayNightBlend - TIME_CONFIGS[3]["sky_blend"]) / abs(TIME_CONFIGS[2]["sky_blend"] - TIME_CONFIGS[3]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            farmer_alpha = 1.0
+            farmer_x = lerp(door_x, hay_x, transition_progress)
+            farmer_z = lerp(door_z, hay_z, transition_progress)
+            farmer_heading = 225.0
+            farmer_action = 'entering'
+        
+        else:
+            # Sudah di posisi, berdiri di dekat hay
+            farmer_alpha = 1.0
+            farmer_x = hay_x
+            farmer_z = hay_z
+            farmer_heading = 225.0
+            farmer_action = 'herding'
+    
+    # ===== JAM 19:00 (MALAM) - PETERNAK DI PINTU BARN =====
+    elif currentTime == 3:
+        if is_transitioning and previousTime == 2:
+            # Transisi dari jam 16:00 ke jam 19:00 - peternak jalan dari hay ke pintu
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[2]["sky_blend"]) / abs(TIME_CONFIGS[3]["sky_blend"] - TIME_CONFIGS[2]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            farmer_alpha = 1.0
+            farmer_x = lerp(hay_x, door_x, transition_progress)
+            farmer_z = lerp(hay_z, door_z, transition_progress)
+            farmer_heading = 90.0
+            farmer_action = 'entering'
+        
+        elif is_transitioning and previousTime == 4:
+            # Transisi dari jam 23:00 ke jam 19:00 - peternak masuk dari gerbang ke pintu
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[4]["sky_blend"]) / abs(TIME_CONFIGS[3]["sky_blend"] - TIME_CONFIGS[4]["sky_blend"])
             transition_progress = clamp(transition_progress, 0.0, 1.0)
             
             if transition_progress < 0.3:
@@ -720,23 +698,11 @@ def draw_farmer():
             farmer_heading = 90.0
             farmer_action = 'herding'
     
-    # ===== JAM 23 (TENGAH MALAM) - PETERNAK KELUAR =====
-    elif currentTime == 3:
-        if is_transitioning and previousTime == 1:
-            # Transisi dari jam 10 ke jam 23 - peternak keluar dari tengah
-            transition_progress = abs(dayNightBlend - TIME_CONFIGS[1]["sky_blend"]) / abs(TIME_CONFIGS[3]["sky_blend"] - TIME_CONFIGS[1]["sky_blend"])
-            transition_progress = clamp(transition_progress, 0.0, 1.0)
-            
-            # Fade out sambil jalan ke gerbang
-            farmer_alpha = 1.0 - transition_progress
-            farmer_x = lerp(center_x, gate_x, transition_progress)
-            farmer_z = lerp(center_z, gate_z, transition_progress)
-            farmer_heading = 0.0
-            farmer_action = 'exiting'
-        
-        elif is_transitioning and previousTime == 2:
-            # Transisi dari jam 19 ke jam 23 - peternak keluar dari pintu
-            transition_progress = abs(dayNightBlend - TIME_CONFIGS[2]["sky_blend"]) / abs(TIME_CONFIGS[3]["sky_blend"] - TIME_CONFIGS[2]["sky_blend"])
+    # ===== JAM 23:00 (TENGAH MALAM) - PETERNAK KELUAR =====
+    elif currentTime == 4:
+        if is_transitioning and previousTime == 3:
+            # Transisi dari jam 19:00 ke jam 23:00 - peternak keluar dari pintu
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[3]["sky_blend"]) / abs(TIME_CONFIGS[4]["sky_blend"] - TIME_CONFIGS[3]["sky_blend"])
             transition_progress = clamp(transition_progress, 0.0, 1.0)
             
             # Fade out sambil jalan ke gerbang
@@ -745,10 +711,6 @@ def draw_farmer():
             farmer_z = lerp(door_z, gate_z, transition_progress)
             farmer_heading = 0.0
             farmer_action = 'exiting'
-        
-        elif is_transitioning and previousTime == 0:
-            # Transisi dari jam 7 ke jam 23 - tidak ada peternak
-            return
         
         else:
             # Sudah keluar, tidak render
@@ -862,9 +824,9 @@ def draw_wolf():
     wolf_alpha = 0.0
     
     # Logika fade in/out berdasarkan transisi waktu
-    if currentTime == 3:
+    if currentTime == 4:
         # Jam 23:00 - serigala muncul
-        if previousTime != 3:
+        if previousTime != 4:
             # Baru masuk ke jam 23:00 - fade in
             # dayNightBlend akan naik dari transitionStartBlend ke 1.0
             if dayNightBlend < 1.0:
@@ -882,7 +844,7 @@ def draw_wolf():
             wolf_alpha = 1.0
     else:
         # Bukan jam 23:00
-        if previousTime == 3:
+        if previousTime == 4:
             # Baru keluar dari jam 23:00 - fade out
             # dayNightBlend akan turun dari 1.0 ke target blend
             target_blend = TIME_CONFIGS[currentTime]["sky_blend"]
@@ -904,7 +866,7 @@ def draw_wolf():
     if wolf_alpha < 0.01:
         return
     
-    # Animasi jalan-jalan dalam pola elips (sama seperti domba tapi lebih cepat)
+    # Animasi jalan-jalan dalam pola elips (sama seperti domba)
     # Pagar kiri di x = -11.0, jadi serigala patrol di luar dengan jarak aman
     patrol_radius_x = 1.2
     patrol_radius_z = 2.5
@@ -1004,30 +966,36 @@ def draw_celestial_body():
     glDisable(GL_LIGHTING)
 
     # Posisi matahari/bulan berdasarkan waktu
-    # Jam 07:00 (currentTime=0): Matahari di timur (kiri)
-    # Jam 10:00 (currentTime=1): Matahari hampir di atas (90 derajat)
-    # Jam 19:00 (currentTime=2): Bulan di timur (kiri)
-    # Jam 23:00 (currentTime=3): Bulan hampir di atas (90 derajat)
+    # Jam 06:00 (currentTime=0): Matahari terbit di timur (kiri, sangat rendah)
+    # Jam 08:00 (currentTime=1): Matahari naik (kiri-tengah, sedang)
+    # Jam 16:00 (currentTime=2): Matahari terbenam di barat (kanan, sedang)
+    # Jam 19:00 (currentTime=3): Bulan terbit di timur (kiri, rendah)
+    # Jam 23:00 (currentTime=4): Bulan di atas (tengah, tinggi)
     
-    if dayNightBlend < 0.55:
+    if dayNightBlend < 0.6:
         # Matahari (siang)
-        sun_t = 1.0 - smoothstep(dayNightBlend / 0.55)
+        sun_t = 1.0 - smoothstep(dayNightBlend / 0.6)
         
         # Hitung posisi berdasarkan currentTime
         if currentTime == 0:
-            # Jam 07:00 - Matahari di timur (kiri, rendah)
-            sun_x = -8.0
-            sun_y = 8.0
+            # Jam 06:00 - Matahari terbit di timur (kiri, sangat rendah)
+            sun_x = -10.0
+            sun_y = 6.0
             sun_z = -10.0
         elif currentTime == 1:
-            # Jam 10:00 - Matahari hampir di atas (tengah, tinggi)
-            sun_x = 2.0
-            sun_y = 14.0
+            # Jam 08:00 - Matahari naik (kiri-tengah, sedang)
+            sun_x = -3.0
+            sun_y = 11.0
+            sun_z = -10.0
+        elif currentTime == 2:
+            # Jam 16:00 - Matahari terbenam di barat (kanan, sedang)
+            sun_x = 8.0
+            sun_y = 9.0
             sun_z = -10.0
         else:
             # Transisi atau malam - posisi default
-            sun_x = 9.0
-            sun_y = 13.2
+            sun_x = 10.0
+            sun_y = 7.0
             sun_z = -10.0
         
         glColor3f(1.0, 0.88, 0.28)
@@ -1047,20 +1015,20 @@ def draw_celestial_body():
             glutSolidCube(1.0)
             glPopMatrix()
 
-    if dayNightBlend > 0.2:
+    if dayNightBlend > 0.3:
         # Bulan (malam)
-        moon_t = smoothstep((dayNightBlend - 0.2) / 0.8)
+        moon_t = smoothstep((dayNightBlend - 0.3) / 0.7)
         
         # Hitung posisi berdasarkan currentTime
-        if currentTime == 2:
-            # Jam 19:00 - Bulan di timur (kiri, rendah)
-            moon_x = -8.5
-            moon_y = 8.5
+        if currentTime == 3:
+            # Jam 19:00 - Bulan terbit di timur (kiri, rendah)
+            moon_x = -9.0
+            moon_y = 8.0
             moon_z = -9.5
-        elif currentTime == 3:
-            # Jam 23:00 - Bulan hampir di atas (tengah, tinggi)
+        elif currentTime == 4:
+            # Jam 23:00 - Bulan di atas (tengah, tinggi)
             moon_x = 0.0
-            moon_y = 14.0
+            moon_y = 15.0
             moon_z = -9.5
         else:
             # Transisi atau siang - posisi default
@@ -1451,6 +1419,14 @@ def draw_farm_plot():
     draw_grass_patch(-7.0, 2.0, 20, 1.5)
     draw_grass_patch(4.0, 4.5, 18, 1.4)
     
+    # AREA GRAZING JAM 08:00 - Banyak rumput hijau untuk domba menggerombol
+    draw_grass_patch(-6.5, 5.0, 35, 2.2)   # Area grazing utama - sangat lebat
+    draw_grass_patch(-4.0, 5.5, 30, 2.0)   # Area grazing tengah - lebat
+    draw_grass_patch(-5.2, 3.8, 32, 2.1)   # Area grazing bawah - lebat
+    draw_grass_patch(-7.5, 4.2, 28, 1.9)   # Area grazing kiri - lebat
+    draw_grass_patch(-3.5, 4.0, 25, 1.8)   # Area grazing kanan - lebat
+    draw_grass_patch(-5.8, 6.2, 30, 2.0)   # Area grazing atas - lebat
+    
     # Rumput di area serigala (kiri luar pagar)
     draw_grass_patch(-14.0, 2.0, 22, 1.6)  # Area patrol serigala
     draw_grass_patch(-13.5, 4.5, 18, 1.4)
@@ -1793,8 +1769,8 @@ def draw_goat(config):
     
     # ===== LOGIKA POSISI BERDASARKAN WAKTU DAN TRANSISI =====
     
-    if currentTime == 0:  # Jam 07:00 - Pagi (Roaming)
-        if is_transitioning and previousTime >= 2:
+    if currentTime == 0:  # Jam 06:00 - Pagi (Keluar dari barn, mulai roaming)
+        if is_transitioning and previousTime >= 3:
             # Transisi dari malam (19:00 atau 23:00) ke pagi - keluar dari barn
             exit_progress = 1.0 - (dayNightBlend / TIME_CONFIGS[previousTime]["sky_blend"])
             exit_progress = clamp(exit_progress, 0.0, 1.0)
@@ -1819,17 +1795,22 @@ def draw_goat(config):
             heading = -np.degrees(np.arctan2(path_dz, path_dx))
             
         elif is_transitioning and previousTime == 1:
-            # Transisi dari jam makan (10:00) ke pagi - dari hay bale ke roaming
+            # Transisi dari jam 08:00 ke 06:00 - dari area grazing ke roaming
             transition_progress = 1.0 - (abs(dayNightBlend - TIME_CONFIGS[0]["sky_blend"]) / abs(TIME_CONFIGS[1]["sky_blend"] - TIME_CONFIGS[0]["sky_blend"]))
             transition_progress = clamp(transition_progress, 0.0, 1.0)
             
-            x_pos = lerp(hay_target_x, roam_x, transition_progress)
-            z_pos = lerp(hay_target_z, roam_z, transition_progress)
-            y_pos = lerp(0.55, 0.62 + body_bob, transition_progress)
+            # Posisi awal dari area grazing
+            grazing_pos = GRAZING_AREA_POSITIONS[config["index"]]
+            grazing_base_x = grazing_pos["x"]
+            grazing_base_z = grazing_pos["z"]
+            
+            x_pos = lerp(grazing_base_x, roam_x, transition_progress)
+            z_pos = lerp(grazing_base_z, roam_z, transition_progress)
+            y_pos = 0.62 + body_bob
             
             # Heading ke arah roaming
-            path_dx = roam_x - hay_target_x
-            path_dz = roam_z - hay_target_z
+            path_dx = roam_x - grazing_base_x
+            path_dz = roam_z - grazing_base_z
             heading = -np.degrees(np.arctan2(path_dz, path_dx))
         else:
             # Normal roaming
@@ -1838,23 +1819,79 @@ def draw_goat(config):
             y_pos = 0.62 + body_bob
             heading = roam_heading
     
-    elif currentTime == 1:  # Jam 10:00 - Jam Makan (Hay Bale)
+    elif currentTime == 1:  # Jam 08:00 - Pagi (Berhenti di area grazing untuk makan rumput)
+        # Domba berhenti di area grazing (tidak bergerak, hanya diam)
+        grazing_pos = GRAZING_AREA_POSITIONS[config["index"]]
+        grazing_x = grazing_pos["x"]
+        grazing_z = grazing_pos["z"]
+        
         if is_transitioning and previousTime == 0:
-            # Transisi dari pagi ke jam makan - roaming ke hay bale
+            # Transisi dari 06:00 ke 08:00 - dari roaming ke area grazing
             transition_progress = abs(dayNightBlend - TIME_CONFIGS[0]["sky_blend"]) / abs(TIME_CONFIGS[1]["sky_blend"] - TIME_CONFIGS[0]["sky_blend"])
             transition_progress = clamp(transition_progress, 0.0, 1.0)
             
-            x_pos = lerp(roam_x, hay_target_x, transition_progress)
-            z_pos = lerp(roam_z, hay_target_z, transition_progress)
-            y_pos = lerp(0.62 + body_bob, 0.55, transition_progress)
+            x_pos = lerp(roam_x, grazing_x, transition_progress)
+            z_pos = lerp(roam_z, grazing_z, transition_progress)
+            y_pos = 0.62
             
-            # Heading ke hay bale
-            path_dx = hay_target_x - roam_x
-            path_dz = hay_target_z - roam_z
+            # Heading ke area grazing
+            path_dx = grazing_x - roam_x
+            path_dz = grazing_z - roam_z
             heading = -np.degrees(np.arctan2(path_dz, path_dx))
             
-        elif is_transitioning and previousTime >= 2:
-            # Transisi dari malam (19:00 atau 23:00) ke jam makan - barn ke hay bale
+        elif is_transitioning and previousTime >= 3:
+            # Transisi dari malam ke pagi - keluar dari barn ke area grazing
+            transition_progress = 1.0 - (dayNightBlend / TIME_CONFIGS[previousTime]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            if transition_progress < 0.4:
+                # Fase 1: Keluar dari barn ke pintu
+                inside_to_door = transition_progress / 0.4
+                x_pos = lerp(spot["inside_x"], spot["door_x"], inside_to_door)
+                z_pos = lerp(spot["inside_z"], spot["door_z"], inside_to_door)
+                scale_factor = config["scale"] * max(inside_to_door, 0.1)
+            else:
+                # Fase 2: Dari pintu ke area grazing
+                door_to_graze = (transition_progress - 0.4) / 0.6
+                x_pos = lerp(spot["door_x"], grazing_x, door_to_graze)
+                z_pos = lerp(spot["door_z"], grazing_z, door_to_graze)
+                scale_factor = config["scale"]
+            
+            y_pos = 0.62
+            path_dx = grazing_x - spot["inside_x"]
+            path_dz = grazing_z - spot["inside_z"]
+            heading = -np.degrees(np.arctan2(path_dz, path_dx))
+            
+        else:
+            # Normal - berhenti di area grazing (tidak bergerak)
+            x_pos = grazing_x
+            z_pos = grazing_z
+            y_pos = 0.62
+            # Heading menghadap ke tengah area grazing
+            heading = 45.0 * config["index"]  # Setiap domba menghadap arah berbeda
+    
+    elif currentTime == 2:  # Jam 16:00 - Sore (Makan hay bale)
+        if is_transitioning and previousTime == 1:
+            # Transisi dari jam 08:00 (area grazing) ke hay bale
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[1]["sky_blend"]) / abs(TIME_CONFIGS[2]["sky_blend"] - TIME_CONFIGS[1]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            # Posisi awal dari area grazing
+            grazing_pos = GRAZING_AREA_POSITIONS[config["index"]]
+            grazing_base_x = grazing_pos["x"]
+            grazing_base_z = grazing_pos["z"]
+            
+            x_pos = lerp(grazing_base_x, hay_target_x, transition_progress)
+            z_pos = lerp(grazing_base_z, hay_target_z, transition_progress)
+            y_pos = lerp(0.62, 0.55, transition_progress)
+            
+            # Heading ke hay bale
+            path_dx = hay_target_x - grazing_base_x
+            path_dz = hay_target_z - grazing_base_z
+            heading = -np.degrees(np.arctan2(path_dz, path_dx))
+            
+        elif is_transitioning and previousTime >= 3:
+            # Transisi dari malam ke hay bale - keluar dari barn
             transition_progress = 1.0 - (dayNightBlend / TIME_CONFIGS[previousTime]["sky_blend"])
             transition_progress = clamp(transition_progress, 0.0, 1.0)
             
@@ -1888,9 +1925,9 @@ def draw_goat(config):
             path_dz = HAY_BALE_POSITIONS[hay_idx]["z"] - z_pos
             heading = -np.degrees(np.arctan2(path_dz, path_dx))
     
-    elif currentTime >= 2:  # Jam 19:00 atau 23:00 - Malam (Barn)
+    elif currentTime >= 3:  # Jam 19:00 atau 23:00 - Malam (Barn)
         if is_transitioning and previousTime == 0:
-            # Transisi dari pagi ke malam - roaming ke barn
+            # Transisi dari pagi (06:00) ke malam - roaming ke barn
             transition_progress = abs(dayNightBlend - TIME_CONFIGS[0]["sky_blend"]) / abs(TIME_CONFIGS[currentTime]["sky_blend"] - TIME_CONFIGS[0]["sky_blend"])
             transition_progress = clamp(transition_progress, 0.0, 1.0)
             
@@ -1919,8 +1956,42 @@ def draw_goat(config):
                 return
                 
         elif is_transitioning and previousTime == 1:
-            # Transisi dari jam makan ke malam - hay bale ke barn
+            # Transisi dari jam 08:00 (area grazing) ke malam - area grazing ke barn
             transition_progress = abs(dayNightBlend - TIME_CONFIGS[1]["sky_blend"]) / abs(TIME_CONFIGS[currentTime]["sky_blend"] - TIME_CONFIGS[1]["sky_blend"])
+            transition_progress = clamp(transition_progress, 0.0, 1.0)
+            
+            # Posisi awal dari area grazing
+            grazing_pos = GRAZING_AREA_POSITIONS[config["index"]]
+            grazing_base_x = grazing_pos["x"]
+            grazing_base_z = grazing_pos["z"]
+            
+            if transition_progress < 0.6:
+                # Fase 1: Area grazing ke pintu
+                walk_progress = transition_progress / 0.6
+                x_pos = lerp(grazing_base_x, spot["door_x"], walk_progress)
+                z_pos = lerp(grazing_base_z, spot["door_z"], walk_progress)
+                scale_factor = config["scale"]
+            else:
+                # Fase 2: Pintu ke dalam barn
+                hide_progress = (transition_progress - 0.6) / 0.4
+                x_pos = lerp(spot["door_x"], spot["inside_x"], hide_progress)
+                z_pos = lerp(spot["door_z"], spot["inside_z"], hide_progress)
+                scale_factor = config["scale"] * (1.0 - hide_progress)
+            
+            y_pos = 0.62
+            
+            # Heading ke barn
+            path_dx = spot["inside_x"] - grazing_base_x
+            path_dz = spot["inside_z"] - grazing_base_z
+            heading = -np.degrees(np.arctan2(path_dz, path_dx))
+            
+            # Jika sudah masuk sepenuhnya, jangan render
+            if transition_progress >= 0.98:
+                return
+                
+        elif is_transitioning and previousTime == 2:
+            # Transisi dari jam 16:00 (hay bale) ke malam - hay bale ke barn
+            transition_progress = abs(dayNightBlend - TIME_CONFIGS[2]["sky_blend"]) / abs(TIME_CONFIGS[currentTime]["sky_blend"] - TIME_CONFIGS[2]["sky_blend"])
             transition_progress = clamp(transition_progress, 0.0, 1.0)
             
             if transition_progress < 0.6:
@@ -1947,7 +2018,7 @@ def draw_goat(config):
             if transition_progress >= 0.98:
                 return
                 
-        elif is_transitioning and ((previousTime == 2 and currentTime == 3) or (previousTime == 3 and currentTime == 2)):
+        elif is_transitioning and ((previousTime == 3 and currentTime == 4) or (previousTime == 4 and currentTime == 3)):
             # Transisi antara jam 19:00 dan 23:00 - tetap di barn (tidak perlu animasi)
             # Domba sudah di dalam, tidak perlu render
             return
@@ -2334,15 +2405,14 @@ def timer(value):
         if previousTime != currentTime:
             previousTime = currentTime
 
-    # Domba hanya berkeliaran saat pagi (currentTime == 0)
-    if currentTime == 0 and dayNightBlend <= 0.02:
+    # Domba berkeliaran saat pagi dan siang (currentTime == 0 atau 1)
+    if currentTime in [0, 1] and dayNightBlend <= 0.12:
         goatWalkPhase += 0.025
         if goatWalkPhase >= np.pi * 2:
             goatWalkPhase -= np.pi * 2
     
-    # Serigala jalan-jalan saat tengah malam (currentTime == 3)
-    # Lebih cepat dari domba (0.04 vs 0.025)
-    if currentTime == 3:
+    # Serigala jalan-jalan saat tengah malam (currentTime == 4)
+    if currentTime == 4:
         wolfWalkPhase += 0.04
         if wolfWalkPhase >= np.pi * 2:
             wolfWalkPhase -= np.pi * 2
@@ -2384,39 +2454,46 @@ def mouse(button, state, x, y):
             # Check if clicking on buttons (for mobile touch support)
             button_clicked = False
             
-            # Button T (170-195)
-            if 20 <= mouse_x <= 45 and 170 <= mouse_y <= 195:
+            # Button T (195-220) - posisi disesuaikan dengan panel baru
+            if 20 <= mouse_x <= 45 and 195 <= mouse_y <= 220:
                 previousTime = currentTime
                 transitionStartBlend = dayNightBlend
-                currentTime = (currentTime + 1) % 4
+                currentTime = (currentTime + 1) % 5
                 button_clicked = True
             
-            # Button 1 (135-160)
-            elif 20 <= mouse_x <= 45 and 135 <= mouse_y <= 160:
+            # Button 1 (160-185)
+            elif 20 <= mouse_x <= 45 and 160 <= mouse_y <= 185:
                 previousTime = currentTime
                 transitionStartBlend = dayNightBlend
                 currentTime = 0
                 button_clicked = True
             
-            # Button 2 (100-125)
-            elif 20 <= mouse_x <= 45 and 100 <= mouse_y <= 125:
+            # Button 2 (125-150)
+            elif 20 <= mouse_x <= 45 and 125 <= mouse_y <= 150:
                 previousTime = currentTime
                 transitionStartBlend = dayNightBlend
                 currentTime = 1
                 button_clicked = True
             
-            # Button 3 (65-90)
-            elif 20 <= mouse_x <= 45 and 65 <= mouse_y <= 90:
+            # Button 3 (90-115)
+            elif 20 <= mouse_x <= 45 and 90 <= mouse_y <= 115:
                 previousTime = currentTime
                 transitionStartBlend = dayNightBlend
                 currentTime = 2
                 button_clicked = True
             
-            # Button 4 (30-55)
-            elif 20 <= mouse_x <= 45 and 30 <= mouse_y <= 55:
+            # Button 4 (55-80)
+            elif 20 <= mouse_x <= 45 and 55 <= mouse_y <= 80:
                 previousTime = currentTime
                 transitionStartBlend = dayNightBlend
                 currentTime = 3
+                button_clicked = True
+            
+            # Button 5 (20-45)
+            elif 20 <= mouse_x <= 45 and 20 <= mouse_y <= 45:
+                previousTime = currentTime
+                transitionStartBlend = dayNightBlend
+                currentTime = 4
                 button_clicked = True
             
             if not button_clicked:
@@ -2508,26 +2585,30 @@ def keyboard(key, x, y):
         if zoomDistance < -42.0:
             zoomDistance = -42.0
     elif key == b't' or key == b'T':
-        # Toggle waktu: cycle through 0 -> 1 -> 2 -> 3 -> 0
+        # Toggle waktu: cycle through 0 -> 1 -> 2 -> 3 -> 4 -> 0
         previousTime = currentTime
         transitionStartBlend = dayNightBlend
-        currentTime = (currentTime + 1) % 4
+        currentTime = (currentTime + 1) % 5
     elif key == b'1':
         previousTime = currentTime
         transitionStartBlend = dayNightBlend
-        currentTime = 0  # 07:00 Pagi
+        currentTime = 0  # 06:00 Pagi - Domba keluar
     elif key == b'2':
         previousTime = currentTime
         transitionStartBlend = dayNightBlend
-        currentTime = 1  # 10:00 Jam Makan
+        currentTime = 1  # 08:00 Pagi - Makan rumput
     elif key == b'3':
         previousTime = currentTime
         transitionStartBlend = dayNightBlend
-        currentTime = 2  # 19:00 Malam
+        currentTime = 2  # 16:00 Sore - Makan hay bale
     elif key == b'4':
         previousTime = currentTime
         transitionStartBlend = dayNightBlend
-        currentTime = 3  # 23:00 Tengah Malam
+        currentTime = 3  # 19:00 Malam - Masuk barn
+    elif key == b'5':
+        previousTime = currentTime
+        transitionStartBlend = dayNightBlend
+        currentTime = 4  # 23:00 Tengah Malam
     glutPostRedisplay()
 
 

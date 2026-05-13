@@ -2,21 +2,49 @@
 
 ## 📋 Deskripsi
 
-Proyek grafika komputer 3D menggunakan PyOpenGL yang menampilkan farm dengan kincir angin, barn, domba, serigala, dan peternak. Dilengkapi dengan sistem waktu 4 periode dan berbagai animasi interaktif. **Kompatibel dengan mobile/touch devices!**
+Proyek grafika komputer 3D menggunakan PyOpenGL yang menampilkan farm dengan kincir angin, barn, domba, serigala, dan peternak. Dilengkapi dengan **sistem waktu 5 periode** yang mensimulasikan **skenario pemberian pakan domba** di peternakan dan berbagai animasi interaktif. **Kompatibel dengan mobile/touch devices!**
 
 ## ✨ Fitur Utama
 
-### 🕐 Sistem Waktu 4 Periode
-- **07:00 - Pagi**: Domba berkeliaran di luar
-- **10:00 - Jam Makan**: Peternak datang, domba makan di hay bale
-- **19:00 - Malam**: Peternak di depan pintu barn, domba masuk
-- **23:00 - Tengah Malam**: Serigala muncul, peternak keluar
+### 🕐 Sistem Waktu 5 Periode - Skenario Pemberian Pakan Domba
+
+Berdasarkan praktik peternakan domba yang umumnya memberi pakan dua kali sehari (pagi dan sore):
+
+- **06:00 - Pagi Awal**: Domba keluar dari barn untuk mulai beraktivitas
+  - Domba keluar dari kandang
+  - Matahari terbit di timur (sangat rendah)
+  - Belum ada peternak
+  
+- **08:00 - Pagi (Pemberian Pakan Pagi)**: Domba makan rumput segar (grazing)
+  - Peternak datang untuk mengawasi
+  - Domba berkeliaran makan hijauan segar/rumput
+  - Matahari naik lebih tinggi
+  - **Ini adalah waktu pemberian pakan pertama (grazing)**
+  
+- **16:00 - Sore (Pemberian Pakan Sore)**: Domba makan hay bale
+  - Peternak memberi pakan tambahan (hay bale/konsentrat)
+  - Domba berkumpul di hay bale
+  - Matahari mulai terbenam di barat
+  - **Ini adalah waktu pemberian pakan kedua (hay/konsentrat)**
+  
+- **19:00 - Malam**: Domba masuk kandang untuk istirahat
+  - Peternak menggembalakan domba masuk barn
+  - Domba dikandangkan untuk keamanan
+  - Bulan terbit, langit gelap
+  
+- **23:00 - Tengah Malam**: Semua istirahat
+  - Serigala muncul mengintai
+  - Peternak sudah pulang
+  - Domba di dalam barn
+  - Bulan tinggi di langit
+
+**Referensi**: Pemberian pakan domba di peternakan umumnya dilakukan dua kali sehari - pagi (hijauan segar) dan sore (konsentrat/hay bale).
 
 ### 🐑 Animasi Domba
-- Berkeliaran dengan pola elips (jam 7)
-- Makan di hay bale dengan kepala menunduk (jam 10)
+- Berkeliaran/grazing (jam 06:00 dan 08:00)
+- Makan di hay bale dengan kepala menunduk (jam 16:00)
 - Masuk dan keluar barn dengan smooth transition
-- 12 kombinasi transisi smooth antar waktu
+- Transisi smooth antar waktu dengan berbagai kombinasi
 
 ### 🐺 Serigala
 - Muncul HANYA di jam 23:00
@@ -27,9 +55,11 @@ Proyek grafika komputer 3D menggunakan PyOpenGL yang menampilkan farm dengan kin
 - Kecepatan 1.6x lebih cepat dari domba
 
 ### 👨‍🌾 Peternak (Farmer)
-- **Jam 10**: Masuk dari gerbang, menggiring domba makan
-- **Jam 19**: Berdiri di depan pintu barn
-- **Jam 23**: Fade out keluar lewat gerbang
+- **Jam 06:00**: Tidak ada (domba keluar sendiri)
+- **Jam 08:00**: Di tengah lapangan, mengawasi domba grazing
+- **Jam 16:00**: Di dekat hay bale, memberi pakan sore
+- **Jam 19:00**: Di depan pintu barn, menggembalakan domba masuk
+- **Jam 23:00**: Sudah pulang (tidak ada)
 - Animasi berjalan dengan arm swing dan leg swing
 - Dilengkapi topi, baju, dan sepatu
 
@@ -58,10 +88,11 @@ Proyek grafika komputer 3D menggunakan PyOpenGL yang menampilkan farm dengan kin
 ### Keyboard
 | Key | Fungsi |
 |-----|--------|
-| `1` | Pagi (07:00) |
-| `2` | Jam makan (10:00) |
-| `3` | Malam (19:00) |
-| `4` | Tengah malam (23:00) |
+| `1` | Pagi awal (06:00) - Domba keluar |
+| `2` | Pagi (08:00) - Makan rumput |
+| `3` | Sore (16:00) - Makan hay bale |
+| `4` | Malam (19:00) - Masuk barn |
+| `5` | Tengah malam (23:00) |
 | `T` | Toggle waktu (cycle) |
 | `+/-` | Zoom in/out |
 | Arrow keys | Adjust view angle |
@@ -72,13 +103,14 @@ Proyek grafika komputer 3D menggunakan PyOpenGL yang menampilkan farm dengan kin
 - **Scroll up/down**: Zoom in/out
 - **Right click**: View preset menu
 
-### � Mobile Controls
+### 📱 Mobile Controls
 Tap pada tombol di panel kiri bawah:
 - **[T]** - Toggle waktu
-- **[1]** - Untuk siang (07:00)
-- **[2]** - Untuk malam (10:00)
-- **[3]** - Untuk sore (19:00)
-- **[4]** - Untuk tengah malam (23:00)
+- **[1]** - Pagi (06:00) - domba keluar
+- **[2]** - Pagi (08:00) - makan rumput
+- **[3]** - Sore (16:00) - makan hay bale
+- **[4]** - Malam (19:00) - masuk barn
+- **[5]** - Tengah malam (23:00)
 
 ## �🚀 Cara Menjalankan
 
@@ -95,26 +127,31 @@ python kincir.py
 ### Mobile/Tablet
 Program dapat dijalankan di perangkat mobile dengan Python environment (seperti Pydroid 3 untuk Android).
 
-## 📊 Struktur Waktu
+## 📊 Struktur Waktu - Skenario Pemberian Pakan
 
 ```
-07:00 (Pagi)
-├── Domba berkeliaran
+06:00 (Pagi Awal)
+├── Domba keluar dari barn
 ├── Tidak ada peternak
 └── Tidak ada serigala
 
-10:00 (Jam Makan)
-├── Peternak masuk dari gerbang
-├── Domba makan di hay bale
+08:00 (Pagi - Pemberian Pakan 1)
+├── Peternak di tengah lapangan
+├── Domba grazing (makan rumput segar)
+└── Tidak ada serigala
+
+16:00 (Sore - Pemberian Pakan 2)
+├── Peternak di dekat hay bale
+├── Domba makan hay bale/konsentrat
 └── Tidak ada serigala
 
 19:00 (Malam)
 ├── Peternak di depan pintu barn
-├── Domba masuk barn
+├── Domba masuk barn untuk istirahat
 └── Tidak ada serigala
 
 23:00 (Tengah Malam)
-├── Peternak fade out keluar
+├── Peternak sudah pulang
 ├── Domba di dalam barn
 └── Serigala muncul patrol (1.6x speed)
 ```
@@ -189,7 +226,24 @@ farmerWalkPhase = 0.0    # Fase animasi peternak
 
 ## 📝 Version History
 
-### Version 2.9.0 (Current)
+### Version 3.0.0 (Current) - Skenario Pemberian Pakan Domba
+- ✅ **NEW**: Sistem waktu 5 periode (06:00, 08:00, 16:00, 19:00, 23:00)
+- ✅ **NEW**: Skenario pemberian pakan domba 2x sehari (pagi & sore)
+- ✅ **NEW**: Posisi matahari dan bulan disesuaikan dengan waktu baru
+- ✅ Peternak muncul di 3 waktu dengan posisi berbeda:
+  - Jam 08:00: Di tengah lapangan (mengawasi grazing)
+  - Jam 16:00: Di dekat hay bale (memberi pakan sore)
+  - Jam 19:00: Di pintu barn (menggembalakan masuk)
+- ✅ Domba dengan perilaku sesuai waktu:
+  - Jam 06:00: Keluar dari barn
+  - Jam 08:00: Grazing (makan rumput)
+  - Jam 16:00: Makan hay bale
+  - Jam 19:00: Masuk barn
+  - Jam 23:00: Di dalam barn
+- ✅ Serigala tetap muncul di jam 23:00
+- ✅ UI panel diperbarui dengan 5 tombol waktu
+
+### Version 2.9.0
 - ✅ Fixed farmer stuck at jam 19:00 (now at door position)
 - ✅ Removed river (simplified scene)
 - ✅ Fixed wolf animation (same pattern as sheep, 1.6x faster)
@@ -240,20 +294,22 @@ Created for Computer Graphics course project.
 
 ## 🎉 Demo Sequence
 
-1. Start at **Jam 7** - Show roaming sheep, no farmer, no wolf
-2. **Tap [2]** or press **2** - Farmer enters, sheep go to hay bales
-3. **Tap [3]** or press **3** - Farmer at barn door, sheep enter
-4. **Tap [4]** or press **4** - Farmer exits, wolf appears (faster movement!)
-5. Rotate 360° - Show trees, complete scene
+1. Start at **Jam 06:00** - Show sheep exiting barn, sunrise, no farmer
+2. **Tap [2]** or press **2** - Farmer appears, sheep grazing on grass
+3. **Tap [3]** or press **3** - Farmer at hay bale, sheep eating hay (feeding time!)
+4. **Tap [4]** or press **4** - Farmer at barn door, sheep entering barn
+5. **Tap [5]** or press **5** - Farmer gone, wolf appears (faster movement!)
+6. Rotate 360° - Show complete farm scene
 
-**Total Demo Time**: ~3 minutes
+**Total Demo Time**: ~3-4 minutes
 
 ---
 
-**Version**: 2.9.0  
+**Version**: 3.0.0 - Skenario Pemberian Pakan Domba  
 **Status**: ✅ Production Ready  
 **Quality**: ⭐⭐⭐⭐⭐  
-**Mobile**: ✅ Compatible
+**Mobile**: ✅ Compatible  
+**Educational**: ✅ Based on real farming practices
 
-🌾 **Enjoy the farm on any device!** 🐑🐺👨‍🌾📱
+🌾 **Experience realistic sheep farming schedule!** 🐑👨‍🌾📱
 
